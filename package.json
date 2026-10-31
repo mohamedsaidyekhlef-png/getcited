@@ -1,0 +1,16 @@
+{
+  "name": "getcited",
+  "version": "0.1.0",
+  "description": "Why doesn't ChatGPT cite your site? An open-source GEO audit and agent skill: checks AI crawler access, structure, quotability and trust, then drafts the fixes.",
+  "type": "module",
+  "bin": { "getcited": "bin/getcited.mjs" },
+  "exports": "./src/audit.mjs",
+  "files": ["bin", "src", "SKILL.md", "README.md", "LICENSE"],
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "engines": { "node": ">=18" },
+  "keywords": ["geo", "generative-engine-optimization", "aeo", "ai-seo", "llms-txt", "chatgpt", "perplexity", "ai-overviews", "agent-skill", "claude-code", "seo-audit"],
+  "author": "Mohamed Said Yekhlef",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/mohamedsaidyekhlef-png/getcited.git" },
+  "homepage": "https://github.com/mohamedsaidyekhlef-png/getcited#readme"
+}

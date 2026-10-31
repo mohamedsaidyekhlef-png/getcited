@@ -1,0 +1,6 @@
+# SettleWise
+
+> Plain-English guides to structured settlement buyouts.
+
+## Guides
+- [How buyouts work](/): pricing, timing and court approval

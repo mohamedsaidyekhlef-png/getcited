@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-label="getcited: why doesn't ChatGPT cite your site? Find out and fix it.">
+<rect width="1280" height="360" rx="18" fill="#0F121B"/><g transform="translate(820 70)" font-family="Schibsted Grotesk, Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="400" height="220" rx="18" fill="#171B27" stroke="#2A3040" stroke-width="2"/>
+<rect x="24" y="24" width="250" height="14" rx="7" fill="#2A3040"/><rect x="24" y="50" width="340" height="14" rx="7" fill="#2A3040"/><rect x="24" y="76" width="300" height="14" rx="7" fill="#2A3040"/>
+<rect x="24" y="112" width="170" height="40" rx="20" fill="#8794FF" fill-opacity=".15" stroke="#8794FF" stroke-width="2"/>
+<circle cx="46" cy="132" r="9" fill="#8794FF"/><text x="62" y="138" font-size="17" font-weight="700" fill="#8794FF">yoursite.com</text>
+<rect x="206" y="112" width="150" height="40" rx="20" fill="none" stroke="#2A3040" stroke-width="2"/><text x="222" y="138" font-size="17" fill="#9AA2B5">competitor.io</text>
+<text x="24" y="190" font-size="15" fill="#9AA2B5">Sources cited in an AI answer</text></g>
+<g font-family="Schibsted Grotesk, Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"><text x="64" y="110" font-size="66" font-weight="800" letter-spacing="-1.6" fill="#E8EBF2">getcited</text>
+<text x="64" y="168" font-size="31" font-weight="500" fill="#E8EBF2">Why doesn't ChatGPT cite your site?</text>
+<text x="64" y="210" font-size="22" fill="#9AA2B5">Find out in one command. Fix it with your coding agent.</text>
+<text x="64" y="296" font-size="19" fill="#9AA2B5">Crawler access · structure · quotability · trust · real AI answers</text></g></svg>

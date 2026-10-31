@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /private/
+
+User-agent: OAI-SearchBot
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+Disallow: /
