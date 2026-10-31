@@ -6,7 +6,7 @@
   "bin": { "getcited": "bin/getcited.mjs" },
   "exports": "./src/audit.mjs",
   "files": ["bin", "src", "SKILL.md", "README.md", "LICENSE"],
-  "scripts": { "test": "node --test test/*.test.mjs" },
+  "scripts": { "test": "node --test test/audit.test.mjs" },
   "engines": { "node": ">=18" },
   "keywords": ["geo", "generative-engine-optimization", "aeo", "ai-seo", "llms-txt", "chatgpt", "perplexity", "ai-overviews", "agent-skill", "claude-code", "seo-audit"],
   "author": "Mohamed Said Yekhlef",
