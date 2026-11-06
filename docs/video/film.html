@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>getcited explainers</title>
+<style>
+:root{--bg:#0B0E17;--panel:#141927;--panel2:#1A2033;--line:#283048;--ink:#EEF1F8;--muted:#98A1B8;--acc:#8794FF;--acc2:#B4BCFF;--good:#3CCB8C;--warn:#F0B43C;--bad:#FF6276}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1280px;height:720px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Inter,"Inter Display",system-ui,sans-serif}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(1200px 600px at 85% -10%,#1d2450 0%,transparent 60%),radial-gradient(900px 500px at -10% 110%,#13203a 0%,transparent 55%),var(--bg)}
+.a{position:absolute}
+.kicker{font:600 18px/1 Inter;letter-spacing:.18em;color:var(--acc);text-transform:uppercase}
+.h1{font:800 64px/1.05 "Inter Display",Inter;letter-spacing:-.025em}
+.h2{font:700 34px/1.15 "Inter Display",Inter;letter-spacing:-.015em}
+.muted{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px}
+.chip{display:inline-block;padding:8px 14px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font:500 17px/1.2 Inter}
+.mono{font-family:"DejaVu Sans Mono",ui-monospace,monospace}
+.bar{height:22px;border-radius:11px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;border-radius:11px;background:var(--muted)}
+.me{color:var(--acc)} .me .bar i{background:var(--acc)}
+.cmd{font:500 22px/1 "DejaVu Sans Mono",monospace;padding:16px 22px;border-radius:14px;background:#0E1220;border:1px solid var(--line);color:var(--ink)}
+.cmd b{color:var(--acc);font-weight:500}
+.brand{font:800 26px/1 "Inter Display",Inter;letter-spacing:-.02em}
+.brand span{color:var(--acc)}
+.sent{border-radius:6px;padding:2px 4px;transition:none}
+.tag{font:600 13px/1 Inter;padding:6px 9px;border-radius:8px}
+</style></head><body><div id="stage"></div>
+<script>
+const W = 1280, H = 720, S = document.getElementById("stage");
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const p = (t, a, b) => ease((t - a) / (b - a));
+const el = (html, x, y, style = "") => { const d = document.createElement("div"); d.className = "a"; d.style.cssText = `left:${x}px;top:${y}px;${style}`; d.innerHTML = html; S.appendChild(d); return d; };
+const show = (e, t, a, d = 0.6, dy = 24, out = Infinity) => { const k = p(t, a, a + d) * (out === Infinity ? 1 : 1 - p(t, out, out + 0.5)); e.style.opacity = k; e.style.transform = `translateY(${(1 - p(t, a, a + d)) * dy}px)`; return k; };
+
+// Shared opening and closing for every pillar.
+function frame(spec) {
+  const kick = el(`<div class="kicker">${spec.n} · ${spec.name}</div>`, 80, 250);
+  const head = el(`<div class="h1" style="width:1100px">${spec.hook}</div>`, 80, 290);
+  const sub = el(`<div class="h2 muted" style="width:1050px;font-weight:500;font-size:28px">${spec.sub}</div>`, 80, 318 + spec.hookLines * 70);
+  const brand = el(`<div class="brand">get<span>cited</span></div>`, 80, 60);
+  const step = el(`<div class="kicker muted" style="letter-spacing:.12em;white-space:nowrap">Unit tests for AI search</div>`, 800, 66, "text-align:right;width:400px");
+  const endA = el(`<div class="h1" style="width:1120px;font-size:56px">${spec.end}</div>`, 80, 230);
+  const endB = el(`<div class="cmd">${spec.cmd}</div>`, 80, 230 + spec.endLines * 64 + 40);
+  const endC = el(`<div class="muted" style="font:500 20px Inter">github.com/mohamedsaidyekhlef-png/getcited · free and open source</div>`, 80, 230 + spec.endLines * 64 + 130);
+  return (t, T) => {
+    brand.style.opacity = p(t, 0, 0.5); step.style.opacity = p(t, 0, 0.5) * 0.9;
+    show(kick, t, 0.2, 0.6, 16, 2.3); show(head, t, 0.35, 0.7, 30, 2.3); show(sub, t, 0.7, 0.7, 30, 2.3);
+    show(endA, t, T - 3.2, 0.7, 30); show(endB, t, T - 2.8, 0.6, 20); show(endC, t, T - 2.4, 0.6, 16);
+  };
+}
+
+const SCENES = {
+  // ---------------------------------------------------------------- ARENA
+  arena: () => {
+    const T = 15;
+    const intro = frame({ n: "01", name: "Citation Arena", hook: "Who does AI cite<br>instead of you?", hookLines: 2, sub: "Replays the retrieve-then-cite pipeline on your page and your competitors'.", end: "0% → 80% citation share.<br>One rewrite.", endLines: 2, cmd: `<b>$</b> npx getcited arena "your question" you.com rival.com` });
+    const q = el(`<div class="card" style="padding:16px 22px;font:600 22px Inter">❝ How much does a structured settlement buyout cost? ❞</div>`, 80, 120);
+    const pages = [["you.com", "me"], ["rival.com", ""], ["forum.net", ""]].map(([n, c], i) => el(`<div class="card ${c}" style="width:250px;padding:16px 18px"><div style="font:700 19px Inter" class="${c}">${n}</div><div style="margin-top:12px;display:grid;gap:8px">${[0, 1, 2].map(() => `<div style="height:10px;border-radius:5px;background:var(--line)"></div>`).join("")}</div></div>`, 80, 215 + i * 140));
+    const ctx = el(`<div class="card" style="width:330px;height:390px;padding:16px 18px"><div class="kicker" style="font-size:14px">Context window · top 5</div></div>`, 470, 215);
+    const fly = [["rival.com", 0], ["rival.com", 1], ["forum.net", 2], ["rival.com", 1], ["forum.net", 2]].map(([n, from], i) => el(`<div class="chip" style="width:290px;font-size:15px">${n} · passage</div>`, 0, 0));
+    const lab = el(`<div class="kicker" style="font-size:14px">Citation share</div>`, 850, 215);
+    const rows = [["rival.com", 85, 20], ["forum.net", 15, 0], ["you.com", 0, 80]].map(([n, a, b], i) => { const r = el(`<div class="${n === "you.com" ? "me" : ""}" style="width:360px"><div style="display:flex;justify-content:space-between;font:600 19px Inter;margin-bottom:8px"><span>${n}</span><span class="v">0%</span></div><div class="bar"><i style="width:0"></i></div></div>`, 850, 250 + i * 78); r.vals = [a, b]; return r; });
+    const why = el(`<div class="card" style="width:360px;padding:16px 18px;font:500 16px/1.45 Inter"><div style="color:var(--bad);font-weight:700;margin-bottom:6px">Why you lose</div>→ The question's words never appear on your page<br>→ The winner has numbers, you have none</div>`, 850, 490);
+    const flip = el(`<div class="chip" style="background:var(--acc);color:#0B0E17;font-weight:700;border:0">Page rewritten ✓</div>`, 850, 490);
+    return (t) => {
+      intro(t, T);
+      const on = (a) => show(q, t, a, 0.5, 16, 11.4);
+      on(2.8); pages.forEach((e, i) => show(e, t, 3.0 + i * 0.12, 0.5, 20, 11.4)); show(ctx, t, 3.3, 0.5, 20, 11.4);
+      const after = p(t, 8.6, 9.6);
+      fly.forEach((f, i) => {
+        const k = p(t, 3.9 + i * 0.35, 4.6 + i * 0.35);
+        const src = after ? (i < 4 ? 0 : 1) : [1, 1, 2, 1, 2][i];
+        const fx = 120, fy = 240 + src * 140, tx = 490, ty = 255 + i * 66;
+        f.style.left = `${fx + (tx - fx) * k}px`; f.style.top = `${fy + (ty - fy) * k}px`;
+        f.style.opacity = clamp(k * 3) * (1 - p(t, 11.4, 11.9));
+        const name = (after > 0.5 ? (i < 4 ? "you.com" : "rival.com") : ["rival.com", "rival.com", "forum.net", "rival.com", "forum.net"][i]);
+        f.innerHTML = `${name} · passage`;
+        f.style.borderColor = name === "you.com" ? "var(--acc)" : "var(--line)"; f.style.color = name === "you.com" ? "var(--acc2)" : "var(--ink)";
+      });
+      show(lab, t, 5.6, 0.5, 10, 11.4);
+      rows.forEach((r, i) => {
+        show(r, t, 5.7 + i * 0.1, 0.5, 14, 11.4);
+        const v = r.vals[0] * p(t, 5.9, 6.9) + (r.vals[1] - r.vals[0]) * after;
+        r.querySelector("i").style.width = `${v}%`; r.querySelector(".v").textContent = `${Math.round(v)}%`;
+      });
+      show(why, t, 6.9, 0.5, 14, 8.4); show(flip, t, 8.7, 0.4, 10, 11.4);
+    };
+  },
+
+  // ---------------------------------------------------------------- X-RAY
+  xray: () => {
+    const T = 14;
+    const intro = frame({ n: "02", name: "Citation X-ray", hook: "Which of your sentences<br>would AI actually quote?", hookLines: 2, sub: "Every sentence scored: quotable, weak, or dead weight, with the reason.", end: "Most ranking pages:<br>only 1 in 5 sentences is quotable.", endLines: 2, cmd: `<b>$</b> npx getcited xray https://you.com/pricing` });
+    const S1 = [
+      ["We are the world-class, best-in-class leader in innovative financial solutions.", "dead", "marketing fluff"],
+      ["It is our mission to deliver a seamless experience.", "dead", "starts with \"It\""],
+      ["A structured settlement buyout costs the gap between your payments' value and the lump sum.", "good", "states a fact"],
+      ["At an 8.5% discount rate, $100,000 over 10 years is worth about $66,000 today.", "good", "specific number"],
+      ["We believe we might offer some of the most competitive options.", "weak", "hedged"],
+      ["Click here to get started today!", "dead", "call to action"],
+    ];
+    const box = el(`<div class="card" style="width:780px;padding:26px 30px;font:500 22px/1.75 Inter">${S1.map((s, i) => `<span class="sent" data-i="${i}">${s[0]}</span>`).join(" ")}</div>`, 80, 130);
+    const sents = [...box.querySelectorAll(".sent")];
+    const scan = el(`<div style="width:4px;height:420px;background:linear-gradient(var(--acc),transparent);box-shadow:0 0 24px var(--acc)"></div>`, 80, 130);
+    const tags = S1.map((s, i) => el(`<span class="tag" style="background:${s[1] === "good" ? "#3CCB8C26" : s[1] === "weak" ? "#F0B43C26" : "#FF627626"};color:${s[1] === "good" ? "var(--good)" : s[1] === "weak" ? "var(--warn)" : "var(--bad)"}">${s[1] === "good" ? "✓ quotable" : s[1] === "weak" ? "~ weak" : "✗ dead weight"} · ${s[2]}</span>`, 900, 140 + i * 62));
+    const stat = el(`<div class="card" style="width:300px;padding:20px 22px"><div class="kicker" style="font-size:13px">Quotable</div><div class="h1 v" style="font-size:72px;color:var(--acc)">0%</div><div class="muted" style="font:500 16px Inter">of sentences on this page</div></div>`, 900, 530);
+    const col = { good: "rgba(60,203,140,.22)", weak: "rgba(240,180,60,.22)", dead: "rgba(255,98,118,.2)" };
+    return (t) => {
+      intro(t, T);
+      show(box, t, 2.8, 0.5, 20, 10.6);
+      const sx = p(t, 3.4, 7.6);
+      scan.style.left = `${80 + sx * 780}px`; scan.style.opacity = (t > 3.3 && t < 7.8 ? 1 : 0) * (1 - p(t, 10.6, 11));
+      sents.forEach((s, i) => {
+        const k = p(t, 3.6 + i * 0.65, 4.0 + i * 0.65) * (1 - p(t, 10.6, 11.1));
+        const v = S1[i][1];
+        s.style.background = k > 0.05 ? col[v] : "transparent";
+        s.style.textDecoration = v === "dead" && k > 0.5 ? "line-through rgba(255,98,118,.7)" : "none";
+        s.style.color = v === "dead" && k > 0.5 ? "#B9BFD0" : "var(--ink)";
+        show(tags[i], t, 3.7 + i * 0.65, 0.4, 0, 10.6);
+      });
+      show(stat, t, 7.9, 0.5, 14, 10.6);
+      stat.querySelector(".v").textContent = `${Math.round(33 * p(t, 8.0, 8.9))}%`;
+    };
+  },
+
+  // ---------------------------------------------------------------- TESTS IN CI
+  tests: () => {
+    const T = 15;
+    const intro = frame({ n: "03", name: "Citation tests in CI", hook: "Unit tests<br>for AI search.", hookLines: 2, sub: "Fail the pull request when a change would cost you a citation.", end: "Ship nothing that makes<br>AI forget you.", endLines: 2, cmd: `<b>uses:</b> mohamedsaidyekhlef-png/getcited@v1` });
+    const yml = el(`<div class="card mono" style="width:520px;padding:22px 24px;font-size:17px;line-height:1.7;white-space:pre"><span class="muted"># getcited.yml</span>
+site: <span style="color:var(--acc2)">https://you.com/pricing</span>
+competitors:
+  - rival.com/pricing
+questions:
+  - ask: How much does it cost?
+    expect: <span style="color:var(--good)">top3</span>
+  - ask: Best tool for freelancers?
+    expect: <span style="color:var(--good)">share>=30%</span>
+  - ask: Does it work with Stripe?
+    expect: <span style="color:var(--good)">cited</span></div>`, 80, 130);
+    const pr = el(`<div class="card" style="width:600px;padding:20px 24px"><div style="font:700 20px Inter">PR #142 · "New pricing page design"</div><div class="muted" style="font:500 15px Inter;margin-top:6px">getcited / citation tests</div><div class="lines" style="margin-top:16px;display:grid;gap:12px;font:500 18px Inter"></div><div class="verdict" style="margin-top:18px"></div></div>`, 620, 130);
+    const lines = pr.querySelector(".lines"), verdict = pr.querySelector(".verdict");
+    const L1 = [["✓", "good", "How much does it cost? → top3", "rank 1"], ["✗", "bad", "Best tool for freelancers? → share≥30%", "share 4%"], ["✗", "bad", "Does it work with Stripe? → cited", "not in top 5"]];
+    const L2 = [["✓", "good", "How much does it cost? → top3", "rank 1"], ["✓", "good", "Best tool for freelancers? → share≥30%", "share 41%"], ["✓", "good", "Does it work with Stripe? → cited", "rank 2"]];
+    const badge = el(`<div style="display:flex;border-radius:8px;overflow:hidden;font:700 20px Inter"><span style="background:#555;padding:9px 14px">AI citation tests</span><span style="background:#2ea043;padding:9px 14px" class="b">3/3 passing</span></div>`, 620, 560);
+    return (t) => {
+      intro(t, T);
+      show(yml, t, 2.8, 0.6, 20, 11.4); show(pr, t, 3.2, 0.6, 20, 11.4);
+      const fixed = t > 8.2;
+      const L = fixed ? L2 : L1;
+      lines.innerHTML = L.map((l, i) => { const k = fixed ? p(t, 8.3 + i * 0.3, 8.6 + i * 0.3) : p(t, 4.0 + i * 0.6, 4.4 + i * 0.6); return `<div style="opacity:${k};display:flex;gap:12px"><b style="color:var(--${l[1]});width:18px">${l[0]}</b><span style="flex:1">${l[2]}</span><span class="muted">${l[3]}</span></div>`; }).join("");
+      const vk = fixed ? p(t, 9.3, 9.7) : p(t, 6.0, 6.4);
+      verdict.innerHTML = fixed ? `<span class="chip" style="opacity:${vk};background:#3CCB8C22;border-color:var(--good);color:var(--good);font-weight:700">✓ All citation tests passed · ready to merge</span>` : `<span class="chip" style="opacity:${vk};background:#FF627622;border-color:var(--bad);color:var(--bad);font-weight:700">✗ Merge blocked · this redesign loses 2 AI answers</span>`;
+      if (t > 7.4 && t < 8.2) verdict.style.opacity = 1 - p(t, 7.4, 8.1); else verdict.style.opacity = 1;
+      show(badge, t, 9.9, 0.5, 14, 11.4);
+    };
+  },
+
+  // ---------------------------------------------------------------- REGRESSIONS
+  regress: () => {
+    const T = 15;
+    const intro = frame({ n: "04", name: "Regression monitoring", hook: "Know the day<br>you lost the answer.", hookLines: 2, sub: "Every run is saved and compared with the last, so you see what changed and why.", end: "Not a dashboard that says you lost.<br>A diff that says why.", endLines: 2, cmd: `<b>$</b> npx getcited test --fail-on-regression` });
+    const chart = el(`<div class="card" style="width:640px;height:400px;padding:20px 24px"><div class="kicker" style="font-size:14px">Citation share · "How much does it cost?"</div><svg width="590" height="320" style="margin-top:14px"><g class="grid"></g><polyline class="ln" fill="none" stroke="var(--acc)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><g class="dots"></g></svg></div>`, 80, 130);
+    const svg = chart.querySelector("svg"), ln = chart.querySelector(".ln"), dots = chart.querySelector(".dots");
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], vals = [0.78, 0.8, 0.82, 0.8, 0.0, 0.0, 0.81];
+    chart.querySelector(".grid").innerHTML = days.map((d, i) => `<text x="${30 + i * 88}" y="312" fill="#98A1B8" font-size="15" font-family="Inter" text-anchor="middle">${d}</text>`).join("") + [0, 0.5, 1].map((v) => `<line x1="10" x2="580" y1="${280 - v * 240}" y2="${280 - v * 240}" stroke="#283048"/><text x="0" y="${276 - v * 240}" fill="#98A1B8" font-size="13" font-family="Inter">${v * 100}%</text>`).join("");
+    const diff = el(`<div class="card" style="width:440px;padding:20px 22px;font:500 17px/1.5 Inter"><div style="font-weight:700;margin-bottom:10px">Changes since Thu <span style="color:var(--bad)">· 3 regressions</span></div><div style="display:grid;gap:10px"><div><b style="color:var(--bad)">▼</b> citation share 80% → 0%</div><div><b style="color:var(--bad)">▼</b> your passage "Cost by discount rate" dropped out of the context</div><div><b style="color:var(--bad)">▼</b> test now failing: top3 (rank 9)</div><div class="muted"><b>•</b> forum.net entered the context</div></div></div>`, 760, 140);
+    const back = el(`<div class="chip" style="border-color:var(--good);color:var(--good);font-weight:700">▲ Sun: fixed · share back to 81%</div>`, 760, 470);
+    return (t) => {
+      intro(t, T);
+      show(chart, t, 2.8, 0.6, 20, 11.4);
+      const n = 1 + 6 * p(t, 3.4, 9.2);
+      const pts = []; for (let i = 0; i < Math.floor(n); i++) pts.push([30 + i * 88, 280 - vals[i] * 240]);
+      const fr = n - Math.floor(n), i0 = Math.floor(n) - 1;
+      if (i0 + 1 < vals.length && fr > 0) { const a = pts[pts.length - 1]; const bx = 30 + (i0 + 1) * 88, by = 280 - vals[i0 + 1] * 240; pts.push([a[0] + (bx - a[0]) * fr, a[1] + (by - a[1]) * fr]); }
+      ln.setAttribute("points", pts.map((q) => q.join(",")).join(" "));
+      dots.innerHTML = pts.slice(0, Math.floor(n)).map((q, i) => `<circle cx="${q[0]}" cy="${q[1]}" r="7" fill="${vals[i] < 0.1 ? "#FF6276" : "#8794FF"}"/>`).join("");
+      show(diff, t, 6.6, 0.6, 16, 11.4); show(back, t, 9.4, 0.5, 12, 11.4);
+    };
+  },
+
+  // ---------------------------------------------------------------- TRUTH
+  truth: () => {
+    const T = 14;
+    const intro = frame({ n: "05", name: "Truth", hook: "What is AI telling people<br>about your company?", hookLines: 2, sub: "Every claim a model makes about you, checked against your facts.", end: "Find the lies.<br>Publish the fix.", endLines: 2, cmd: `<b>$</b> npx getcited truth "Your Brand" --fact "..." --model openai:…` });
+    const ask = el(`<div class="card" style="padding:16px 22px;font:600 22px Inter">🤖 "Tell me about CashNow Settlements."</div>`, 80, 130);
+    const C = [["Founded in 2018", "good", "✓ correct", ""], ["Headquartered in Miami, Florida", "bad", "✗ wrong", "truth: Austin, Texas"], ["Charges a 20% fee on every sale", "bad", "✗ wrong", "truth: 8.5–11% discount rate"], ["Buys structured settlement payments", "good", "✓ correct", ""], ["Has 40 employees", "muted", "? unverifiable", ""]];
+    const rows = C.map((c, i) => el(`<div class="card" style="width:760px;padding:14px 20px;display:flex;align-items:center;gap:14px;font:500 20px Inter"><span style="flex:1">${c[0]}</span><span class="st tag" style="font-size:15px"></span></div>`, 80, 215 + i * 78));
+    const meter = el(`<div class="card" style="width:300px;padding:22px 24px"><div class="kicker" style="font-size:13px">Accuracy</div><div class="h1 v" style="font-size:80px">0%</div><div class="muted" style="font:500 16px Inter">2 wrong claims to correct</div></div>`, 900, 215);
+    return (t) => {
+      intro(t, T);
+      show(ask, t, 2.8, 0.5, 16, 10.6);
+      rows.forEach((r, i) => {
+        show(r, t, 3.3 + i * 0.4, 0.4, 14, 10.6);
+        const k = p(t, 5.4 + i * 0.5, 5.8 + i * 0.5);
+        const st = r.querySelector(".st"), c = C[i];
+        st.style.opacity = k; st.textContent = `${c[2]}${c[3] ? " · " + c[3] : ""}`;
+        st.style.color = c[1] === "muted" ? "var(--muted)" : `var(--${c[1]})`;
+        st.style.background = c[1] === "good" ? "#3CCB8C22" : c[1] === "bad" ? "#FF627622" : "#98A1B822";
+        r.style.borderColor = k > 0.5 && c[1] === "bad" ? "var(--bad)" : "var(--line)";
+      });
+      show(meter, t, 8.1, 0.5, 14, 10.6);
+      const v = meter.querySelector(".v"); v.textContent = `${Math.round(50 * p(t, 8.2, 9.0))}%`; v.style.color = "var(--warn)";
+    };
+  },
+
+  // ---------------------------------------------------------------- AUDIT
+  audit: () => {
+    const T = 15;
+    const intro = frame({ n: "06", name: "Audit", hook: "robots.txt says \"allowed\".<br>Your firewall says 403.", hookLines: 2, sub: "25 checks: can AI reach, understand, quote and trust your page?", end: "2 of 22 ranking pages we tested<br>turn AI crawlers away.", endLines: 2, cmd: `<b>$</b> npx getcited https://you.com --fix ./geo-fixes` });
+    const robots = el(`<div class="card mono" style="width:330px;padding:18px 20px;font-size:17px;line-height:1.7"><span class="muted"># robots.txt</span><br>User-agent: GPTBot<br>Allow: /<br>User-agent: ClaudeBot<br>Allow: /<br><span style="color:var(--good);font-family:Inter;font-weight:700">✓ allowed</span></div>`, 80, 140);
+    const wall = el(`<div style="width:26px;height:380px;border-radius:8px;background:repeating-linear-gradient(45deg,#FF6276 0 14px,#7a2735 14px 28px)"></div>`, 760, 140);
+    const wl = el(`<div class="kicker" style="color:var(--bad);font-size:14px;width:200px;text-align:center">CDN firewall</div>`, 673, 532);
+    const site = el(`<div class="card" style="width:340px;height:380px;padding:18px"><div style="font:700 19px Inter">you.com</div><div style="margin-top:14px;display:grid;gap:10px">${Array.from({ length: 8 }, (_, i) => `<div style="height:12px;border-radius:6px;background:var(--line);width:${[90, 70, 95, 60, 85, 75, 92, 50][i]}%"></div>`).join("")}</div></div>`, 860, 140);
+    const bots = ["GPTBot", "ClaudeBot", "PerplexityBot"].map((b, i) => el(`<div class="chip" style="font-weight:700">🤖 ${b}</div>`, 440, 190 + i * 110));
+    const codes = [0, 1, 2].map((i) => el(`<div class="tag" style="background:#FF627633;color:var(--bad);font-size:16px">403</div>`, 700, 200 + i * 110));
+    const score = el(`<div class="card" style="width:330px;padding:16px 20px;display:flex;align-items:center;gap:18px"><div class="h1 v" style="font-size:58px;color:var(--bad)">15</div><div style="font:500 16px/1.4 Inter" class="muted">/100 · AI crawlers blocked at the CDN, content only in JavaScript</div></div>`, 80, 420);
+    return (t) => {
+      intro(t, T);
+      show(robots, t, 2.8, 0.5, 16, 11.4); show(wall, t, 3.1, 0.5, 0, 11.4); show(wl, t, 3.1, 0.5, 0, 11.4); show(site, t, 3.2, 0.5, 16, 11.4);
+      bots.forEach((b, i) => {
+        const a = 3.8 + i * 0.5, go = p(t, a, a + 0.9), bounce = p(t, a + 0.9, a + 1.5);
+        b.style.opacity = clamp((t - a) * 3) * (1 - p(t, 11.4, 11.9));
+        b.style.left = `${440 + go * 150 - bounce * 90}px`;
+        show(codes[i], t, a + 0.85, 0.25, 0, 11.4);
+      });
+      show(score, t, 7.4, 0.5, 14, 11.4);
+      const v = score.querySelector(".v"); const f = p(t, 9.0, 10.2);
+      v.textContent = Math.round(15 + 77 * f); v.style.color = f > 0.6 ? "var(--good)" : "var(--bad)";
+      score.querySelector(".muted").textContent = f > 0.6 ? "/100 · after the fixes getcited drafted" : "/100 · AI crawlers blocked at the CDN, content only in JavaScript";
+    };
+  },
+};
+
+const DUR = { arena: 15, xray: 14, tests: 15, regress: 15, truth: 14, audit: 15 };
+const name = new URLSearchParams(location.search).get("scene") || "arena";
+const render = SCENES[name]();
+window.DURATION = DUR[name];
+window.renderAt = (t) => render(t);
+render(Number(new URLSearchParams(location.search).get("t") || 0));
+</script></body></html>

@@ -16,7 +16,7 @@
 
 **[Arena](#-arena-who-gets-cited-and-why) · [X-ray](#-x-ray-what-an-ai-would-quote) · [Tests in CI](#-citation-tests-in-ci) · [Regressions](#-regression-monitoring) · [Truth](#-truth-what-ai-gets-wrong-about-you) · [Audit](#-audit-can-ai-even-reach-you) · [Bench](#-prove-it-bench-against-a-real-engine) · [Agent skill & MCP](#-agent-skill-and-mcp-server)**
 
-<sub>AI search testing infrastructure: open-source CLI, GitHub Action and MCP server.</sub>
+<sub>AI search testing infrastructure: open-source CLI, GitHub Action and MCP server · <a href="https://www.scairos.com/getcited">scairos.com/getcited</a></sub>
 
 </div>
 
@@ -50,6 +50,16 @@ We ran getcited on **5 real questions and the 27 pages that rank for them**, inc
 - **Ranking pages are mostly unquotable.** On the median page, only 20% of sentences are quotable.
 
 Every raw result is in [`study/results/`](study/results/), and the [workflow](.github/workflows/study.yml) re-runs the study on push.
+
+## Watch: the six pillars in 88 seconds
+
+<a href="docs/video/getcited-explained.mp4"><img src="docs/video/poster-explained.jpg" alt="Play the getcited explainer: Citation Arena, X-ray, tests in CI, regression monitoring, truth and audit" width="100%"></a>
+
+| Arena | X-ray | Tests in CI | Regressions | Truth | Audit |
+|---|---|---|---|---|---|
+| [▶ 15s](docs/video/getcited-arena.mp4) | [▶ 14s](docs/video/getcited-xray.mp4) | [▶ 15s](docs/video/getcited-tests.mp4) | [▶ 15s](docs/video/getcited-regress.mp4) | [▶ 14s](docs/video/getcited-truth.mp4) | [▶ 15s](docs/video/getcited-audit.mp4) |
+
+The videos are code too: [`docs/video/film.html`](docs/video/film.html) draws every frame, and [`render.mjs`](docs/video/render.mjs) renders them to MP4.
 
 ## How it works
 
