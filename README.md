@@ -53,11 +53,29 @@ Every raw result is in [`study/results/`](study/results/), and the [workflow](.g
 
 ## Watch: the six pillars
 
-| | |
-|---|---|
-| <img src="docs/video/gif/getcited-arena.gif" alt="Citation Arena: who AI cites instead of you, and why" width="100%"><br>**01 · Citation Arena** | <img src="docs/video/gif/getcited-xray.gif" alt="Citation X-ray: which sentences AI would quote" width="100%"><br>**02 · Citation X-ray** |
-| <img src="docs/video/gif/getcited-tests.gif" alt="Citation tests in CI: the PR fails when a change costs a citation" width="100%"><br>**03 · Tests in CI** | <img src="docs/video/gif/getcited-regress.gif" alt="Regression monitoring: what changed since the last run, and why" width="100%"><br>**04 · Regression monitoring** |
-| <img src="docs/video/gif/getcited-truth.gif" alt="Truth: what AI gets wrong about your brand" width="100%"><br>**05 · Truth** | <img src="docs/video/gif/getcited-audit.gif" alt="Audit: robots.txt says allowed, the firewall says 403" width="100%"><br>**06 · Audit** |
+**01 · Citation Arena**: who AI cites instead of you, and why
+
+<img src="docs/video/gif/getcited-arena.gif" alt="01 · Citation Arena: who AI cites instead of you, and why" width="100%">
+
+**02 · Citation X-ray**: which sentences an AI would quote
+
+<img src="docs/video/gif/getcited-xray.gif" alt="02 · Citation X-ray: which sentences an AI would quote" width="100%">
+
+**03 · Tests in CI**: the PR fails when a change costs you a citation
+
+<img src="docs/video/gif/getcited-tests.gif" alt="03 · Tests in CI: the PR fails when a change costs you a citation" width="100%">
+
+**04 · Regression monitoring**: what changed since the last run, and why
+
+<img src="docs/video/gif/getcited-regress.gif" alt="04 · Regression monitoring: what changed since the last run, and why" width="100%">
+
+**05 · Truth**: what AI gets wrong about your brand
+
+<img src="docs/video/gif/getcited-truth.gif" alt="05 · Truth: what AI gets wrong about your brand" width="100%">
+
+**06 · Audit**: robots.txt says allowed, the firewall says 403
+
+<img src="docs/video/gif/getcited-audit.gif" alt="06 · Audit: robots.txt says allowed, the firewall says 403" width="100%">
 
 [Full 88-second film (MP4)](docs/video/getcited-explained.mp4) · [scairos.com/getcited](https://www.scairos.com/getcited)
 
