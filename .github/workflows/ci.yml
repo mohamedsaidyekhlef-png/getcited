@@ -17,3 +17,24 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
+
+  action:
+    # Runs this repo's own GitHub Action against the example spec, the way users will.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: gc
+        uses: ./
+        with:
+          spec: test/fixtures/arena/getcited-fixed.yml
+          badge: badge.json
+      - run: |
+          test "${{ steps.gc.outputs.failed }}" = "0"
+          test "${{ steps.gc.outputs.passed }}" = "4"
+          grep -q '"4/4 passing"' badge.json
+      - id: gc_fail
+        uses: ./
+        with:
+          spec: test/fixtures/arena/getcited.yml
+          fail-on-error: "false"
+      - run: test "${{ steps.gc_fail.outputs.failed }}" = "4"

@@ -1,12 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-label="getcited: why doesn't ChatGPT cite your site? Find out and fix it.">
-<rect width="1280" height="360" rx="18" fill="#0F121B"/><g transform="translate(820 70)" font-family="Schibsted Grotesk, Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
-<rect width="400" height="220" rx="18" fill="#171B27" stroke="#2A3040" stroke-width="2"/>
-<rect x="24" y="24" width="250" height="14" rx="7" fill="#2A3040"/><rect x="24" y="50" width="340" height="14" rx="7" fill="#2A3040"/><rect x="24" y="76" width="300" height="14" rx="7" fill="#2A3040"/>
-<rect x="24" y="112" width="170" height="40" rx="20" fill="#8794FF" fill-opacity=".15" stroke="#8794FF" stroke-width="2"/>
-<circle cx="46" cy="132" r="9" fill="#8794FF"/><text x="62" y="138" font-size="17" font-weight="700" fill="#8794FF">yoursite.com</text>
-<rect x="206" y="112" width="150" height="40" rx="20" fill="none" stroke="#2A3040" stroke-width="2"/><text x="222" y="138" font-size="17" fill="#9AA2B5">competitor.io</text>
-<text x="24" y="190" font-size="15" fill="#9AA2B5">Sources cited in an AI answer</text></g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-label="getcited: unit tests for AI search. See who ChatGPT cites instead of you, why, and how to take the citation.">
+<rect width="1280" height="360" rx="18" fill="#0F121B"/><g transform="translate(820 64)" font-family="Schibsted Grotesk, Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="400" height="232" rx="18" fill="#171B27" stroke="#2A3040" stroke-width="2"/>
+<text x="24" y="44" font-size="15" fill="#9AA2B5">"How much does it cost?"  citation share</text><text x="24" y="101" font-size="16" font-weight="700" fill="#8794FF">yoursite.com</text><rect x="150" y="86" width="170" height="18" rx="9" fill="#2A3040"/><rect x="150" y="86" width="136" height="18" rx="9" fill="#8794FF"/><text x="376" y="101" font-size="16" font-weight="700" text-anchor="end" fill="#8794FF">80%</text><text x="24" y="147" font-size="16" font-weight="400" fill="#9AA2B5">competitor.io</text><rect x="150" y="132" width="170" height="18" rx="9" fill="#2A3040"/><rect x="150" y="132" width="34" height="18" rx="9" fill="#5B6275"/><text x="376" y="147" font-size="16" font-weight="700" text-anchor="end" fill="#9AA2B5">20%</text><text x="24" y="193" font-size="16" font-weight="400" fill="#9AA2B5">forum.net</text><rect x="150" y="178" width="170" height="18" rx="9" fill="#2A3040"/><text x="376" y="193" font-size="16" font-weight="700" text-anchor="end" fill="#9AA2B5">0%</text>
+<text x="24" y="222" font-size="14" fill="#9AA2B5">✓ 4/4 citation tests passing</text></g>
 <g font-family="Schibsted Grotesk, Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"><text x="64" y="110" font-size="66" font-weight="800" letter-spacing="-1.6" fill="#E8EBF2">getcited</text>
-<text x="64" y="168" font-size="31" font-weight="500" fill="#E8EBF2">Why doesn't ChatGPT cite your site?</text>
-<text x="64" y="210" font-size="22" fill="#9AA2B5">Find out in one command. Fix it with your coding agent.</text>
-<text x="64" y="296" font-size="19" fill="#9AA2B5">Crawler access · structure · quotability · trust · real AI answers</text></g></svg>
+<text x="64" y="168" font-size="34" font-weight="600" fill="#E8EBF2">Unit tests for AI search.</text>
+<text x="64" y="210" font-size="22" fill="#9AA2B5">See who ChatGPT cites instead of you, why, and how to take it back.</text>
+<text x="64" y="296" font-size="19" fill="#9AA2B5">arena · xray · citation tests in CI · AI lie detector · MCP · zero dependencies</text></g></svg>

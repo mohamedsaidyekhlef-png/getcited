@@ -1,0 +1,20 @@
+# Citation tests for the CashNow example. Pages are saved snapshots, so results are reproducible.
+site: mine-fixed.html
+competitors:
+  - settlewise.html
+  - forum.html
+questions:
+  - ask: How much does a structured settlement buyout cost?
+    expect: [cited, top3]
+  - ask: How long does a structured settlement buyout take?
+    expect: cited
+  - ask: What affects the price of a buyout?
+    expect: share>=30%
+brand:
+  name: CashNow Settlements
+  facts:
+    - CashNow was founded in 2018
+    - CashNow is based in Austin, Texas
+    - CashNow's discount rate is 8.5% to 11% a year
+truth:
+  min_accuracy: 0.8

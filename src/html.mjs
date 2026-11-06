@@ -43,14 +43,17 @@ export function readHtml(html) {
     lang: "", title: "", meta: {}, links: [], anchors: [], headings: [], paragraphs: [],
     lists: 0, tables: 0, blockquotes: [], jsonld: [], jsonldErrors: [], times: [],
     scripts: 0, scriptBytes: 0, text: "", mainText: "", hasMain: false, rootDivs: 0,
+    blocks: [], // every visible text block in document order: { tag, text, inMain }
   };
   const re = /<!--[\s\S]*?-->|<(script|style|noscript|template|svg)\b([^>]*)>([\s\S]*?)<\/\1\s*>|<(\/?)([a-zA-Z][\w:-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*?)\/?>|([^<]+)|</g;
   const stack = [];
   const blocks = []; // open block collectors {tag, text, attrs}
   let anchor = null;
   let textAll = [], textMain = [], skipDepth = 0, mainDepth = 0, titleOpen = false, titleText = "";
+  let order = 0;
   const finish = (b) => {
     const t = clean(b.text);
+    if (t && !b.skip && !b.hasChild) out.blocks.push({ tag: b.tag, text: t, inMain: b.inMain, order: b.order });
     if (/^h[1-6]$/.test(b.tag)) out.headings.push({ level: Number(b.tag[1]), text: t, inMain: b.inMain });
     else if (b.tag === "p" && t) out.paragraphs.push({ text: t, inMain: b.inMain });
     else if (b.tag === "blockquote" && t) out.blockquotes.push(t);
@@ -96,7 +99,10 @@ export function readHtml(html) {
         if (tag === "a") anchor = { href: a.href || "", rel: a.rel || "", text: "" };
         if (CLOSES_P.has(tag)) closeOpen("p");
         if (tag === "li") closeOpen("li");
-        if (BLOCK.has(tag)) blocks.push({ tag, text: "", attrs: a, inMain: mainDepth > 0 || tag === "main" || tag === "article" });
+        if (BLOCK.has(tag)) {
+          for (const open of blocks) open.hasChild = true;
+          blocks.push({ tag, text: "", attrs: a, order: order++, skip: skipDepth > 0, inMain: mainDepth > 0 || tag === "main" || tag === "article" });
+        }
         if (!VOID.has(tag)) stack.push(tag);
       } else {
         if (tag === "title" && titleOpen) { titleOpen = false; out.title = clean(titleText); }
@@ -127,6 +133,7 @@ export function readHtml(html) {
   }
   // Unclosed blocks at end of document are legal HTML; flush them.
   for (const b of blocks.splice(0)) finish(b);
+  out.blocks.sort((a, b) => a.order - b.order);
   out.text = clean(textAll.join(" "));
   out.mainText = clean(textMain.join(" "));
   return out;

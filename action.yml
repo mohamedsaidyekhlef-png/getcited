@@ -1,0 +1,52 @@
+name: "getcited AI citation tests"
+description: "Unit tests for AI search: fail the build when a change would stop ChatGPT, Perplexity or Google AI from citing your pages."
+author: "Mohamed Said Yekhlef"
+branding:
+  icon: "check-circle"
+  color: "blue"
+inputs:
+  spec:
+    description: "Path to your getcited.yml"
+    default: "getcited.yml"
+  model:
+    description: "Optional provider:model for live checks, e.g. openai:gpt-4.1-mini. Put the API key in the step's env."
+    default: ""
+  badge:
+    description: "Optional path to write a shields.io endpoint badge JSON"
+    default: ""
+  fail-on-error:
+    description: "Fail the job when a citation test fails"
+    default: "true"
+outputs:
+  passed:
+    description: "Number of passing tests"
+    value: ${{ steps.run.outputs.passed }}
+  failed:
+    description: "Number of failing tests"
+    value: ${{ steps.run.outputs.failed }}
+  share:
+    description: "Average citation share across questions (0 to 1)"
+    value: ${{ steps.run.outputs.share }}
+runs:
+  using: "composite"
+  steps:
+    - id: run
+      shell: bash
+      env:
+        GC_SPEC: ${{ inputs.spec }}
+        GC_MODEL: ${{ inputs.model }}
+        GC_BADGE: ${{ inputs.badge }}
+        GC_FAIL: ${{ inputs.fail-on-error }}
+      run: |
+        args=(test "$GC_SPEC" --summary "$GITHUB_STEP_SUMMARY" --json "$RUNNER_TEMP/getcited.json")
+        [ -n "$GC_MODEL" ] && args+=(--model "$GC_MODEL")
+        [ -n "$GC_BADGE" ] && args+=(--badge "$GC_BADGE")
+        set +e
+        node "$GITHUB_ACTION_PATH/bin/getcited.mjs" "${args[@]}"
+        code=$?
+        set -e
+        if [ -f "$RUNNER_TEMP/getcited.json" ]; then
+          node -e 'const r=require(process.argv[1]);console.log(`passed=${r.passed}\nfailed=${r.failed}\nshare=${r.averageShare ?? ""}`)' "$RUNNER_TEMP/getcited.json" >> "$GITHUB_OUTPUT"
+        fi
+        if [ "$code" -ne 0 ] && [ "$GC_FAIL" = "true" ]; then exit "$code"; fi
+        exit 0

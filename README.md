@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
-  <img src="docs/banner-light.svg" alt="getcited: why doesn't ChatGPT cite your site? Find out in one command. Fix it with your coding agent." width="100%">
+  <img src="docs/banner-light.svg" alt="getcited: unit tests for AI search. See who ChatGPT cites instead of you, why, and how to take it back." width="100%">
 </picture>
 
 <br>
@@ -11,156 +11,235 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-3D4FE0.svg)](LICENSE)
 ![Node 18+](https://img.shields.io/badge/node-%E2%89%A518-13865A.svg)
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-13865A.svg)
+![No API key needed](https://img.shields.io/badge/API%20key-not%20needed-13865A.svg)
+![MCP server](https://img.shields.io/badge/MCP-server-3D4FE0.svg)
 
-**[Quick start](#quick-start) · [Agent skill](#use-it-as-an-agent-skill) · [What it checks](#what-it-checks) · [The fixes](#the-fixes) · [FAQ](#faq)**
+**[Arena](#-arena-who-gets-cited-and-why) · [X-ray](#-x-ray-what-an-ai-would-quote) · [Tests in CI](#-citation-tests-in-ci) · [Truth](#-truth-what-ai-gets-wrong-about-you) · [Audit](#-audit-can-ai-even-reach-you) · [Agent skill & MCP](#-agent-skill-and-mcp-server)**
 
 </div>
 
 ---
 
-People now ask ChatGPT, Perplexity, Claude, Gemini and Google AI Overviews instead of searching. Those engines answer with a handful of cited sources. If your site isn't one of them, you're invisible, and nothing in your analytics tells you why.
+You test your code. You test your page speed. Nobody tests whether ChatGPT, Perplexity, Claude or Google AI Overviews will **cite** them, and that's where your customers now ask their questions.
 
-Usually it's one of a few fixable things:
-
-- **A crawler is blocked.** robots.txt, or a CDN setting such as Cloudflare's AI-bot blocking, turns away the bots that fetch pages for AI answers.
-- **The page is empty to a bot.** Most AI crawlers don't run JavaScript, so a client-rendered page looks blank to them.
-- **There's nothing worth quoting.** The answer is buried in paragraph four, or the page has no numbers, sources or author an engine can trust.
-
-**getcited finds which, in one command, and drafts the fixes.** Run it as a coding-agent skill and it applies them in your codebase, then checks real AI answers to see whether you're being cited.
+AI visibility tools cost $99–$500 a month, and they're dashboards: they tell you that you lost, weeks later. **getcited tells you *why* you lose, before you ship, for free.**
 
 ```bash
-npx github:mohamedsaidyekhlef-png/getcited https://yoursite.com
+npx github:mohamedsaidyekhlef-png/getcited arena "How much does a structured settlement buyout cost?" \
+  cashnow.example  settlewise.example/guide  forum.example/t/sold-my-settlement
 ```
 
-<div align="center">
-<img src="docs/report-bad.png" alt="A getcited report scoring 15/100: AI search crawlers blocked in robots.txt, a CDN returning 403 to AI bots, content only in JavaScript, and snippets blocked" width="100%">
-<br><sub>A site that does everything wrong. The CDN check is the one most people miss: robots.txt says "allowed", but the firewall turns the bots away.</sub>
-</div>
+<img src="docs/arena-before.png" alt="getcited arena: settlewise.example holds 85% of the citation share, forum.example 15%, and your page 0%. Why: the question's words never appear on your page, your best passage is weak to quote, and the winner has specific numbers while you have none." width="100%">
 
-## Quick start
+Rewrite one page with that advice, run it again:
 
-You need Node 18+. Nothing is installed globally and there are no dependencies.
+<img src="docs/arena-after.png" alt="After the rewrite, your page holds 80% of the citation share and wins the question." width="100%">
+
+**0% → 80% citation share, from one rewrite.** That's the loop getcited gives you, for every question your customers ask.
+
+## How it works
+
+AI answer engines don't rank pages. They run **retrieve-then-cite**:
+
+1. They **fan your question out** into sub-queries.
+2. They pull **passages** (a few paragraphs under one heading) from many pages.
+3. They rank the passages and put the top few into the model's context.
+4. The model writes the answer and **cites the passages it used**.
+
+If your best passage doesn't make that shortlist, you're invisible, however good the rest of your page is.
+
+getcited **replicates that pipeline on your machine**:
+- chunking that keeps each heading as context
+- deterministic query fan-out
+- BM25 ranking, adjusted for how quotable each passage is
+- reciprocal rank fusion across the sub-queries
+
+It runs on your page and your competitors' pages. You get the citation share each source would get, the exact passages the engine would read, and a plain-English diff of what the winner has that you don't.
+
+No API key. Same input, same result, every run, so you can put it in CI.
+
+To see what a real model does with those passages, add `--model`. It answers from the top passages and cites them. The passages are **shuffled on every sample to cancel the position bias** that skews single-shot tests.
+
+## 🥊 Arena: who gets cited, and why
 
 ```bash
-npx github:mohamedsaidyekhlef-png/getcited https://yoursite.com              # one page
-npx github:mohamedsaidyekhlef-png/getcited https://yoursite.com --pages 10   # plus 10 linked pages
-npx github:mohamedsaidyekhlef-png/getcited https://yoursite.com --html report.html --fix ./geo-fixes
+getcited arena "<question>" <your-page> <competitor-page> [more competitors...]
+getcited arena "best CRM for a 5-person agency" you.com/crm --vs hubspot.com/... --vs g2.com/...
+getcited arena "..." ./dist/pricing.html --url https://you.com/pricing --vs rival.com/pricing   # before you deploy
 ```
 
-| Option | |
+| You get | |
 |---|---|
-| `--pages <n>` | Also audit up to *n* linked pages on the same site (max 50) |
-| `--html <file>` | Visual report, light and dark, works offline |
-| `--md <file>` / `--json [file]` | Markdown or JSON (JSON to stdout with no file) |
-| `--fix <dir>` | Draft fixes: `llms.txt`, JSON-LD, robots.txt additions and an ordered `FIXES.md` |
-| `--file <page.html> --url <url>` | Audit a local build before you deploy |
-| `--min <score>` | Exit with code 2 below this score: a CI gate |
-| `--no-bots` | Skip the CDN check that fetches with real AI-crawler user agents |
+| **Citation share** | The rank-weighted share of the engine's context each source holds |
+| **The context** | The exact passages an engine would read, in order |
+| **Why you lose** | Question words missing from your page, the answer split across sections, no numbers where the winner has them, passages too long to quote |
+| **Live answers** | Add `--model`. A real model answers and cites; share is averaged over shuffled samples |
 
-## Use it as an agent skill
+`--html arena.html` writes a visual report.
 
-This is where getcited earns its keep. Install it into Claude Code, Codex, Cursor, OpenCode or Gemini CLI:
+## 🩻 X-ray: what an AI would quote
+
+```bash
+getcited xray https://yoursite.com/pricing --html xray.html
+```
+
+Engines lift sentences that **stand on their own and state one specific fact**. X-ray scores every sentence on your page and marks it **quotable**, **weak** or **dead weight**, with the reason. For example:
+- it starts with "It", so it means nothing out of context
+- it's marketing fluff: "world-class", "seamless", "unlock"
+- it's a call to action, not information
+- it's 60 words, too long to lift
+
+<img src="docs/xray.png" alt="getcited X-ray heatmap: 0% of 10 sentences are quotable and 86% of words are dead weight, with every sentence highlighted and the five to rewrite first." width="100%">
+
+## ✅ Citation tests in CI
+
+Put the questions your customers ask in `getcited.yml`:
+
+```yaml
+site: https://yoursite.com/pricing
+competitors:
+  - https://rival.com/pricing
+  - ./snapshots/g2-category.html     # saved HTML works too: fully reproducible tests
+min_score: 70                        # static audit gate
+questions:
+  - ask: How much does YourProduct cost?
+    expect: [cited, top3]
+  - ask: Best invoicing tool for freelancers in Morocco?
+    expect: share>=30%
+  - ask: Does YourProduct integrate with Stripe?
+    expect: live cited               # checked with a real model when --model is set
+```
+
+```bash
+getcited init https://yoursite.com --vs https://rival.com   # writes a starter file from your own page
+getcited test                                                # ✓/✗ per question, exit 1 on failure
+```
+
+### GitHub Action
+
+```yaml
+# .github/workflows/ai-citations.yml
+on: [pull_request]
+jobs:
+  getcited:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mohamedsaidyekhlef-png/getcited@v1
+        with:
+          spec: getcited.yml
+          badge: .github/badges/getcited.json      # optional
+          # model: openai:gpt-4.1-mini              # optional live checks
+        # env:
+        #   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+The job summary shows each question with ✓/✗ and how to fix it. The PR fails when a change, such as a rewrite, a redesign or a new robots rule, would cost you a citation.
+
+A **README badge** is a [shields.io endpoint](https://shields.io/badges/endpoint-badge) away. Commit the `--badge` JSON and point shields at it:
+
+![AI citation tests: example badge](https://img.shields.io/badge/AI%20citation%20tests-4%2F4%20passing-brightgreen)
+
+## 🕵️ Truth: what AI gets wrong about you
+
+When a model answers without searching, it answers from memory, and memory is often wrong about smaller brands.
+
+```bash
+getcited truth "CashNow Settlements" --fact "founded in 2018" --fact "based in Austin, Texas" --model openai:gpt-4.1-mini
+```
+
+```
+openai:gpt-4.1-mini is 50% right about CashNow Settlements: 1 correct, 1 wrong, 1 unverifiable.
+  ✓ CashNow Settlements was founded in 2018.
+  ✗ CashNow is headquartered in Miami, Florida.   truth: CashNow is based in Austin, Texas
+Set the record straight
+  → AI says "CashNow is headquartered in Miami, Florida". The truth: "CashNow is based in Austin, Texas".
+    State it in one plain sentence on your About page and in Organization JSON-LD…
+```
+
+It asks the model closed-book, then a judge checks every claim against your facts. Wrong claims become fixes. Add `brand.facts` and `truth.min_accuracy` to `getcited.yml` to test this in CI too.
+
+## 🔍 Audit: can AI even reach you?
+
+```bash
+getcited https://yoursite.com --pages 10 --html report.html --fix ./geo-fixes
+```
+
+25 checks in four areas. Each comes with the evidence it found and the fix.
+
+| | |
+|---|---|
+| **Reach** | AI search crawlers in robots.txt, evaluated per RFC 9309, and **CDN/firewall blocking**. It fetches the page with OAI-SearchBot, GPTBot, ClaudeBot and PerplexityBot's real user agents and catches the 403s and challenge pages that robots.txt can't show. It also checks server-rendered content, `noindex`/`nosnippet`, response time and sitemap. Training crawlers are reported but never scored |
+| **Understand** | Title, description, headings, valid JSON-LD, Organization/Person entity with `sameAs`, `lang`, canonical, `llms.txt` |
+| **Quote** | Answer-first opening, statistics, authoritative sources, quotations (the [GEO study, KDD 2024](https://arxiv.org/abs/2311.09735) signals), plus lists, tables and depth |
+| **Trust** | Named author, recent `dateModified`, HTTPS, About and Contact pages |
+
+`--fix` drafts:
+- `robots.txt` additions
+- JSON-LD filled from your page, with unknowns left as `TODO` and never invented
+- `llms.txt`
+- an ordered `FIXES.md`
+
+<details><summary>See an audit report</summary><br><img src="docs/report-bad.png" alt="A getcited audit scoring 15/100" width="100%"></details>
+
+## 🤖 Agent skill and MCP server
+
+**As a skill**, for Claude Code, Codex, Cursor, OpenCode and Gemini CLI:
 
 ```bash
 npx skills add mohamedsaidyekhlef-png/getcited
 ```
 
-Then ask your agent:
+> *Why doesn't ChatGPT cite our pricing page? Find out who it cites instead and fix our page until we win.*
 
-> *Why doesn't ChatGPT cite our site? Audit https://oursite.com and fix what you can.*
+Your agent then runs this loop:
+1. Audit.
+2. Arena against the pages that win.
+3. Rewrite your page from the advice, using facts from your codebase. **It never invents a number, author or date.**
+4. Re-run until the arena says you win.
+5. Leave a `getcited.yml` behind so CI keeps it that way.
 
-The skill tells the agent to:
+**As an MCP server**, for any MCP client:
 
-1. **Audit** the site and explain the three fixes that matter most, with evidence.
-2. **Fix** them in your codebase:
-   - merge the robots.txt rules
-   - switch client-rendered pages to server rendering
-   - add JSON-LD filled with facts from your code
-   - rewrite the opening paragraph to answer first
-3. **Re-audit** to show the score change.
-4. **Check real answers.** It asks the engines your customers' questions with the agent's own web search and records whether you're cited and who is cited instead. It saves this to `.geo/prompts.json`, so each run shows progress.
-
-It's built not to invent anything. It never makes up a statistic, author, date, logo or profile link. Anything it can't confirm is left as a `TODO` for you, because a fabricated number is worse than none.
-
-## What it checks
-
-25 checks in four questions. Each one comes with the evidence it found, the fix, and why it matters.
-
-<details open>
-<summary><b>Can AI reach it?</b> If not, nothing else matters.</summary>
-
-| Check | What it catches |
-|---|---|
-| AI search crawlers in robots.txt | OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, Googlebot and Bingbot, evaluated per RFC 9309: most specific group, longest rule, Allow wins ties |
-| **CDN / firewall blocking** | Fetches the page as OAI-SearchBot, GPTBot, ClaudeBot and PerplexityBot with their real user agents and compares with a browser. Catches 403s and challenge pages that robots.txt can't show |
-| Content in the HTML | Flags pages whose text only appears after JavaScript runs |
-| Indexable and quotable | `noindex`, `nosnippet` and `max-snippet:0` in meta tags or `X-Robots-Tag` headers |
-| Response time · sitemap | Slow HTML gets dropped by live fetchers |
-| Training crawlers | GPTBot, ClaudeBot, Google-Extended, CCBot and others. **Reported, not scored:** blocking training is a business choice and doesn't remove you from AI search |
-
-</details>
-
-<details>
-<summary><b>Can AI understand it?</b></summary>
-
-Title, meta description, one H1 with a clear outline, valid JSON-LD with specific types, an Organization or Person entity with `sameAs` links, `lang`, canonical URL, and `llms.txt` (a small bonus, since the big engines don't rely on it yet).
-
-</details>
-
-<details>
-<summary><b>Is it worth quoting?</b></summary>
-
-The signals the [GEO study (KDD 2024)](https://arxiv.org/abs/2311.09735) found move visibility in AI answers:
-- statistics density
-- links to authoritative sources
-- attributed quotations
-
-Plus:
-- an answer in the first paragraph
-- lists, tables and question headings that are easy to lift
-- enough depth to answer from
-
-</details>
-
-<details>
-<summary><b>Can AI trust it?</b></summary>
-
-A named author or publisher, a recent `dateModified`, HTTPS, and linked About and Contact pages.
-
-</details>
-
-## The fixes
-
-`--fix ./geo-fixes` writes files you can review and ship:
-
-| File | |
-|---|---|
-| `FIXES.md` | Every failing check, most damaging first, with the exact fix |
-| `robots-ai-additions.txt` | Allow rules for exactly the AI search crawlers you're blocking |
-| `schema.jsonld.html` | Organization and Article or WebPage JSON-LD (plus FAQPage when the page has question headings), filled from your page. Unknowns are `TODO`, never guessed |
-| `llms.txt` | A map of your key pages for AI tools |
-
-## In CI
-
-```yaml
-- run: npx github:mohamedsaidyekhlef-png/getcited https://staging.yoursite.com --min 70 --md geo.md
+```json
+{ "mcpServers": { "getcited": { "command": "npx", "args": ["-y", "github:mohamedsaidyekhlef-png/getcited", "mcp"] } } }
 ```
 
-The step fails when a deploy would make you less citable, for example a new robots rule or a page that moved to client rendering.
+Tools: `getcited_audit`, `getcited_xray`, `getcited_arena`, `getcited_truth`.
+
+## Bring your own model
+
+Live mode is optional and uses your key. getcited never stores it or writes it to a report.
+
+| `--model` | Key |
+|---|---|
+| `openai:<model>` | `OPENAI_API_KEY` (`OPENAI_BASE_URL` for any compatible endpoint) |
+| `anthropic:<model>` | `ANTHROPIC_API_KEY` |
+| `gemini:<model>` · `openrouter:<model>` · `groq:<model>` · `mistral:<model>` · `deepseek:<model>` | `GEMINI_API_KEY` · `OPENROUTER_API_KEY` · … |
+| `ollama:<model>` · `lmstudio:<model>` | none: runs on your machine |
 
 ## FAQ
 
-<details><summary><b>Does a high score guarantee citations?</b></summary><br>No. It makes you <i>citable</i>: reachable, understandable, quotable and trustworthy. Whether you're cited also depends on competition and authority. That's why the skill checks real answers and records them over time.</details>
+<details><summary><b>Is the offline arena what ChatGPT actually does?</b></summary><br>It replicates the <i>shape</i> of the pipeline that retrieval-augmented engines share: fan-out, passage retrieval, ranking, citation from a short context. It doesn't reproduce any single engine's ranking, index or model. That's the point: it isolates the part you control, which is your page's passages against the competitors' passages for the same question. Use <code>--model</code> for a real model's choice, and the agent skill's web-search check for what live engines show today.</details>
 
-<details><summary><b>Should I block GPTBot or ClaudeBot?</b></summary><br>That's your call. Training crawlers and search crawlers are separate. getcited reports training blocks but never scores them, and it tells you if a search crawler, the kind that drives citations, is blocked.</details>
+<details><summary><b>Why deterministic?</b></summary><br>A test that passes or fails at random is useless in CI. Offline mode gives the same result for the same pages every time, so a failing test means the page changed. Live checks use a fixed seed for the shuffles and several samples.</details>
 
-<details><summary><b>Is llms.txt worth it?</b></summary><br>It's cheap and harmless, so getcited drafts one. But adoption by the major engines is still limited, so it carries about 1.5% of the score. Fix access and content first.</details>
+<details><summary><b>Does a high audit score guarantee citations?</b></summary><br>No. The audit says you're <i>citable</i>: reachable, understandable, quotable and trustworthy. The arena says whether you beat the pages you compete with.</details>
 
-<details><summary><b>Does it send my data anywhere?</b></summary><br>No. The CLI fetches your public pages the way a crawler would, and there's no getcited server or telemetry.</details>
+<details><summary><b>Should I block GPTBot or ClaudeBot?</b></summary><br>That's your call. Training crawlers and search crawlers are different bots. getcited reports training blocks but never scores them. Search crawlers are the ones that drive citations.</details>
+
+<details><summary><b>Does it send my data anywhere?</b></summary><br>No. It fetches public pages the way a crawler does. There's no getcited server and no telemetry. Live mode talks only to the model endpoint you choose.</details>
 
 ## Contributing
 
-Each check is one function in [`src/checks.mjs`](src/checks.mjs) with a weight, evidence and a fix. New AI crawlers go in [`src/robots.mjs`](src/robots.mjs). `npm test` runs the suite against a local good site and a deliberately broken one.
+| Area | File |
+|---|---|
+| Passage chunking | [`src/passages.mjs`](src/passages.mjs) |
+| Fan-out and ranking | [`src/arena.mjs`](src/arena.mjs) |
+| Sentence scoring | [`src/xray.mjs`](src/xray.mjs) |
+| Audit checks | [`src/checks.mjs`](src/checks.mjs) |
+
+`npm test` runs 17 tests end to end: a local good site and a broken one, before/after arena fixtures, a mock OpenAI and Anthropic server for live mode and truth, and the MCP handshake.
 
 ## License
 

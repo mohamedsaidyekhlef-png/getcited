@@ -1,16 +1,58 @@
 {
   "name": "getcited",
-  "version": "0.1.0",
-  "description": "Why doesn't ChatGPT cite your site? An open-source GEO audit and agent skill: checks AI crawler access, structure, quotability and trust, then drafts the fixes.",
+  "version": "1.0.0",
+  "description": "Unit tests for AI search. See who ChatGPT, Perplexity and Google AI Overviews cite instead of you, why, and how to take the citation: offline retrieve-then-cite arena, sentence X-ray, citation tests in CI, AI lie detector, GEO audit, MCP server.",
   "type": "module",
-  "bin": { "getcited": "bin/getcited.mjs" },
-  "exports": "./src/audit.mjs",
-  "files": ["bin", "src", "SKILL.md", "README.md", "LICENSE"],
-  "scripts": { "test": "node --test test/audit.test.mjs" },
-  "engines": { "node": ">=18" },
-  "keywords": ["geo", "generative-engine-optimization", "aeo", "ai-seo", "llms-txt", "chatgpt", "perplexity", "ai-overviews", "agent-skill", "claude-code", "seo-audit"],
+  "bin": {
+    "getcited": "bin/getcited.mjs"
+  },
+  "exports": {
+    ".": "./src/audit.mjs",
+    "./arena": "./src/arena.mjs",
+    "./xray": "./src/xray.mjs",
+    "./spec": "./src/spec.mjs",
+    "./truth": "./src/truth.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "action.yml"
+  ],
+  "scripts": {
+    "test": "node --test test/audit.test.mjs test/v1.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "geo",
+    "generative-engine-optimization",
+    "aeo",
+    "ai-seo",
+    "ai-visibility",
+    "llm-citations",
+    "chatgpt",
+    "perplexity",
+    "ai-overviews",
+    "rag",
+    "bm25",
+    "llms-txt",
+    "mcp",
+    "mcp-server",
+    "github-action",
+    "agent-skill",
+    "claude-code",
+    "seo-audit",
+    "citation-share"
+  ],
   "author": "Mohamed Said Yekhlef",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/mohamedsaidyekhlef-png/getcited.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mohamedsaidyekhlef-png/getcited.git"
+  },
   "homepage": "https://github.com/mohamedsaidyekhlef-png/getcited#readme"
 }

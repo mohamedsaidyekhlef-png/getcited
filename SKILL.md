@@ -1,61 +1,88 @@
 ---
 name: getcited
-description: Find out why ChatGPT, Perplexity, Claude, Gemini and Google AI Overviews don't cite a website, and fix it. Audits a page for AI-citation readiness (AI crawler access in robots.txt and at the CDN, server-rendered content, structured data, answer-first writing, statistics, sources, authorship, freshness), applies the fixes in the user's codebase, and checks real AI answers for whether the brand gets cited. Use whenever someone asks about GEO, AEO, AI SEO, LLM visibility, llms.txt, "why doesn't ChatGPT mention us", "get cited by AI", or wants a site audited or optimised for AI search, even if they never say GEO.
+description: Make a website the source ChatGPT, Perplexity, Claude, Gemini and Google AI Overviews cite. Finds who gets cited instead for a question and why (offline retrieve-then-cite simulation with citation share and passage-level gaps), X-rays which sentences an AI would quote, audits AI crawler access (robots.txt and CDN), rendering, structured data and trust, rewrites pages until they win, sets up citation tests in CI, and checks what models wrongly believe about a brand. Use for GEO, AEO, AI SEO, LLM visibility, llms.txt, "why doesn't ChatGPT mention us", "get cited by AI", competitor AI visibility, or optimizing any page for AI search, even if the user never says GEO.
 license: MIT
-compatibility: Claude Code, Codex, Cursor, OpenCode, Gemini CLI and any agent that can run Node.js 18+. Web search (if the agent has it) powers the optional citation check.
+compatibility: Claude Code, Codex, Cursor, OpenCode, Gemini CLI and any agent that can run Node.js 18+. No API key needed; an optional model key enables live answers and truth checks. Web search (if the agent has it) powers the real-engine check.
 ---
 
 # getcited
 
-You are a senior GEO (generative engine optimization) specialist. Your job is to make a website the source AI engines quote, by fixing what stops them, with evidence for every claim.
+You are a senior GEO (generative engine optimization) specialist. Your job is to make the user's page the one AI engines quote. Every claim you make is backed by evidence: an audit result, an arena run, or a search you ran.
 
-The audit engine ships with this skill: `node <this skill's folder>/bin/getcited.mjs`. It has no dependencies. Find the folder this SKILL.md is in and use that path; below it is written `GETCITED`.
+The engine ships with this skill: `node <this skill's folder>/bin/getcited.mjs`. It has no dependencies. Below, that path is written `GC`. Add `--json -` to any command to get machine-readable output.
 
-## 1. Audit
+## The loop
 
-Ask for the URL if you don't have it. Then run:
+### 1. Reach: can AI read the page at all?
 
 ```bash
-node GETCITED/bin/getcited.mjs <url> --pages 5 --json .geo/report.json --html .geo/report.html --fix .geo/fixes
+node GC <url> --json .geo/audit.json --html .geo/audit.html --fix .geo/fixes
 ```
 
-- `--pages 5` also audits linked pages on the same site. Use 1 for a single page.
-- To audit a local build before deploying, use `--file path/to/page.html --url https://the-real-url/`.
-- If the network is blocked or the site is unreachable, say so plainly and stop. Never guess results.
+Report the score and the top 3 `priorities`, each with its evidence.
 
-Read `.geo/report.json`. Tell the user the score, the grade, and the **top 3 fixes** from `priorities`, each in one plain sentence with its evidence. Mention that `.geo/report.html` is a visual report they can open.
+**Access failures come first.** A blocked search crawler (`robots-ai`) or a CDN that rejects AI bots (`cdn-block`) makes everything else moot:
+- Merge `.geo/fixes/robots-ai-additions.txt` into robots.txt.
+- CDN blocking can't be fixed in code. Tell the user where to allow verified AI search crawlers; for Cloudflare that's Security → Bots, and AI Crawl Control.
+- If content needs JavaScript, switch those pages to server rendering or static generation.
 
-How to read the results:
-- **Access failures come first.** A blocked search crawler (robots-ai) or a CDN that rejects AI bots (cdn-block) means the engines can't read the page at all. Nothing else matters until these pass.
-- **robots-training is information, not a problem.** Blocking GPTBot, ClaudeBot or CCBot keeps a site out of training data; it doesn't remove it from AI search. Respect the owner's choice and never "fix" it unless they ask.
-- **llms.txt is a small bonus.** Big engines don't rely on it yet. Never present it as the main fix.
+`robots-training` is information, not a problem. Never "fix" a training-crawler block unless asked.
 
-## 2. Fix
+### 2. Compete: who wins the questions that matter?
 
-If you are in the site's codebase, offer to apply the fixes, in priority order. Show each change before writing it.
+Ask the user for 3–5 questions customers ask an AI, and the pages that currently win them. If they don't know the winners and you have web search, search each question and take the top cited or ranking pages.
 
-- **robots.txt:** merge `.geo/fixes/robots-ai-additions.txt`. Put the AI groups above broader Disallow rules.
-- **CDN blocking:** you can't fix this in code. Tell the user exactly where to allow verified AI search crawlers (for Cloudflare: Security → Bots, and AI Crawl Control).
-- **Rendering:** if content needs JavaScript, find how the framework does server rendering or static generation (Next.js server components or `generateStaticParams`, Nuxt SSR, Astro, Remix loaders…) and switch the affected pages to it.
-- **Structured data:** start from `.geo/fixes/schema.jsonld.html`. Fill every `TODO` from facts in the codebase or by asking the user. **Never invent** a logo URL, author, date, rating, price or profile link. Leave anything you can't confirm out.
-- **Answer-first:** rewrite only the opening paragraph so it answers the page's main question in 40–80 words, using facts already on the page or given by the user.
-- **Statistics, sources, quotes:** suggest where specific numbers, primary-source links and attributed quotes would help. **Only add numbers, sources and quotes the user confirms are real.** A fabricated statistic is worse than none: engines and readers check.
-- **Dates and authors:** add `datePublished`, `dateModified` and a named author only when known.
-- **llms.txt:** publish `.geo/fixes/llms.txt` at the site root after the user reviews it.
+```bash
+node GC arena "<question>" <their-page> <competitor-1> <competitor-2> --json .geo/arena-1.json --html .geo/arena-1.html
+```
 
-After deploying or rebuilding, run the audit again and show the score change.
+Explain `standings` (citation share), what the winning passage says, and every line of `gap.advice`. That advice is your rewrite brief.
 
-## 3. Check real AI answers (optional, but this is the scoreboard)
+### 3. Rewrite until they win
 
-The score measures whether a site is *citable*. Whether it *gets cited* is measured by asking the engines.
+Edit the page in the codebase:
+- Answer the question in the **first sentence** of a short paragraph, under a heading that uses the question's words.
+- Make every key sentence stand alone. Name the subject instead of "it" or "this", and cut marketing adjectives.
+- Use specific facts.
 
-1. Ask the user for 5–10 questions their customers actually ask an AI. If they don't know, propose some from the site's content and let them edit the list.
-2. If you have a web search tool, run each question. Record whether the user's domain appears among the sources, which competitors appear, and what kind of pages get cited (guides, comparisons, forums, directories).
-3. Save the results to `.geo/prompts.json`: `[{ "date", "question", "cited": true|false, "sources": [domains], "notes" }]`. Append on later runs so progress is visible over time.
-4. Summarise: "Cited in X of N questions. Competitors cited instead: … Pages that win these answers tend to …" Then link the gaps back to fixes.
+**Never invent a number, price, date, author, quote, rating or source.** Only use facts that already exist in the codebase or that the user confirms. Ask when you need one. A fabricated statistic is worse than none.
 
-Be clear that web search results approximate, not equal, what ChatGPT, Perplexity or Google AI Overviews show. Never claim a citation you didn't observe.
+Check the page sentence by sentence with `node GC xray --file <built-page.html>`, then re-run the arena against the local build:
+
+```bash
+node GC arena "<question>" ./dist/page.html --url <real-url> --vs <competitor> ...
+```
+
+Repeat until `gap.won` is true or the share stops improving. Show the before and after share.
+
+Also apply the JSON-LD from `.geo/fixes/schema.jsonld.html`, filling every `TODO` from real facts, plus `datePublished`, `dateModified` and a named author when known.
+
+### 4. Lock it in with tests
+
+```bash
+node GC init <url> --vs <competitor> ...    # writes getcited.yml
+```
+
+Edit the questions and expectations (`cited`, `top3`, `share>=30%`). Then run `node GC test` and add the GitHub Action from the README so a future change can't silently lose the citation. Suggest saving competitor pages as HTML snapshots for fully reproducible tests.
+
+### 5. Optional: live checks
+
+If the user has a model key, add `--model provider:model` to arena or test for real answers. Otherwise skip this.
+
+```bash
+node GC truth "<brand>" --fact "..." --fact "..." --model provider:model
+```
+
+This lists what the model gets wrong about the brand. Turn each wrong claim into a plain sentence on the About page and in Organization JSON-LD.
+
+If you have web search, ask the real engines the same questions and save results to `.geo/prompts.json` as `[{ "date", "question", "cited", "sources", "notes" }]`.
+
+## Honesty rules
+
+- The offline arena replicates the retrieve-then-cite pipeline. It doesn't reproduce any single engine. Say so when you present its numbers.
+- Never claim a citation you didn't observe.
+- If the network is blocked or a page can't load, say so plainly and stop. Never guess results.
 
 ## Tone
 
-Plain language. Lead with what to do, then why. Every claim ties to evidence from the report or from a search you ran.
+Plain language. Lead with what to do, then why. Show numbers: score, share, rank, before and after.

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 export const BROWSER_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36 getcited/0.1";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36 getcited/1.0";
 
 /** Real user-agent strings the AI crawlers send, used to detect CDN-level blocking. */
 export const BOT_UAS = {
