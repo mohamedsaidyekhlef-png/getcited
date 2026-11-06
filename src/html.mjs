@@ -97,6 +97,7 @@ export function readHtml(html) {
         if (tag === "main" || tag === "article") { out.hasMain = true; mainDepth++; }
         if (SKIP_TEXT.has(tag)) skipDepth++;
         if (tag === "a") anchor = { href: a.href || "", rel: a.rel || "", text: "" };
+        if (tag === "br" || !INLINE.has(tag)) for (const b of blocks) b.text += " "; // <br> and block tags separate words
         if (CLOSES_P.has(tag)) closeOpen("p");
         if (tag === "li") closeOpen("li");
         if (BLOCK.has(tag)) {
@@ -107,6 +108,7 @@ export function readHtml(html) {
       } else {
         if (tag === "title" && titleOpen) { titleOpen = false; out.title = clean(titleText); }
         if (tag === "a" && anchor) { anchor.text = clean(anchor.text); out.anchors.push(anchor); anchor = null; }
+        if (!INLINE.has(tag)) for (const b of blocks) b.text += " ";
         if (BLOCK.has(tag)) {
           for (let i = blocks.length - 1; i >= 0; i--) {
             if (blocks[i].tag === tag) { finish(blocks.splice(i, 1)[0]); break; }

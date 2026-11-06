@@ -18,6 +18,11 @@ const save = (name, data) => writeFileSync(new URL(name, out), typeof data === "
 let llm = null;
 try { llm = resolveModel(cfg.model); } catch (e) { console.log("no live model:", e.message); }
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
+if (llm) {
+  // One raw call, saved as-is, so the live results can be checked by hand.
+  const r = await fetch(`${llm.base}/chat/completions`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${llm.key}` }, body: JSON.stringify({ model: llm.model, messages: [{ role: "user", content: "Reply with the single word: ready" }] }) });
+  save("llm-probe.json", { status: r.status, body: await r.text() });
+}
 const summary = { ranAt: new Date().toISOString(), runner: process.env.RUNNER_OS || "local", model: llm?.label || null, questions: [], audits: [], xrays: [], truth: [], probe: [] };
 
 for (const q of cfg.questions) {

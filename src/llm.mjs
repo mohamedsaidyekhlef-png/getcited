@@ -46,7 +46,9 @@ export async function complete(cfg, { system, prompt, temperature = 0.3, maxToke
       });
       body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body?.error?.message || `HTTP ${res.status}`);
-      return (body.content || []).filter((c) => c.type === "text").map((c) => c.text).join("");
+      const text = (body.content || []).filter((c) => c.type === "text").map((c) => c.text).join("");
+      if (!text.trim()) throw new Error(`empty reply (stop_reason: ${body.stop_reason ?? "none"})`);
+      return text;
     }
     const headers = { "content-type": "application/json" };
     if (cfg.key && cfg.key !== "local") headers.authorization = `Bearer ${cfg.key}`;
@@ -54,9 +56,13 @@ export async function complete(cfg, { system, prompt, temperature = 0.3, maxToke
       method: "POST", signal: ctrl.signal, headers,
       body: JSON.stringify({ model: cfg.model, temperature, max_tokens: maxTokens, messages: [...(system ? [{ role: "system", content: system }] : []), { role: "user", content: prompt }] }),
     });
-    body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body?.error?.message || `HTTP ${res.status}`);
-    return body.choices?.[0]?.message?.content ?? "";
+    const raw = await res.text();
+    try { body = JSON.parse(raw); } catch { body = {}; }
+    if (!res.ok) throw new Error(body?.error?.message || `HTTP ${res.status}: ${raw.slice(0, 200)}`);
+    const msg = body.choices?.[0]?.message || {};
+    const text = typeof msg.content === "string" ? msg.content : Array.isArray(msg.content) ? msg.content.map((c) => c.text || "").join("") : "";
+    if (!text.trim()) throw new Error(`empty reply (finish_reason: ${body.choices?.[0]?.finish_reason ?? "none"}${msg.refusal ? `, refusal: ${msg.refusal}` : ""}; response: ${raw.slice(0, 200)})`);
+    return text;
   } catch (e) {
     const why = e.name === "AbortError" ? "timed out" : e?.cause?.code || e.message;
     throw new Error(`${cfg.label}: ${why}`);
