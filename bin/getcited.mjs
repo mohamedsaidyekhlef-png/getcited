@@ -129,7 +129,7 @@ switch (a.cmd) {
       const files = await writeFixes(report, a.fix);
       say(`Draft fixes in ${a.fix}/:\n` + files.map((f) => `  ${f.file}  ${f.note}`).join("\n") + "\n");
     }
-    if (a.min !== undefined && report.score.overall < a.min) die(`score ${report.score.overall} is below --min ${a.min}`, 2);
+    if (a.min !== undefined && report.score.overall < a.min) { console.error(`getcited: score ${report.score.overall} is below --min ${a.min}`); process.exitCode = 2; }
     break;
   }
   case "xray": {
@@ -160,7 +160,7 @@ switch (a.cmd) {
     if (a.html) write(a.html, arenaHtml(r));
     if (a.md) write(a.md, arenaMarkdown(r) + "\n");
     if (a.summary) appendFileSync(a.summary, arenaMarkdown(r) + "\n");
-    if (r.standings.every((s) => !s.ok)) process.exit(1);
+    if (r.standings.every((s) => !s.ok)) process.exitCode = 1;
     break;
   }
   case "test": {
@@ -182,7 +182,7 @@ switch (a.cmd) {
     if (a.summary) appendFileSync(a.summary, md);
     if (a.badge) write(a.badge, JSON.stringify(badge(run)));
     if (a.html) write(a.html, run.results.map((r) => arenaHtml(r)).join("\n"));
-    if (run.failed || (a.failOnRegression && run.diff?.regressions)) process.exit(1);
+    if (run.failed || (a.failOnRegression && run.diff?.regressions)) process.exitCode = 1;
     break;
   }
   case "diff": {
@@ -195,7 +195,7 @@ switch (a.cmd) {
     json(d);
     say("\n" + diffTerminal(d, color));
     if (a.md) write(a.md, diffMarkdown(d));
-    if (a.failOnRegression && d.regressions) process.exit(1);
+    if (a.failOnRegression && d.regressions) process.exitCode = 1;
     break;
   }
   case "bench": {
