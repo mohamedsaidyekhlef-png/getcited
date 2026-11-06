@@ -1,0 +1,147 @@
+{
+  "tool": "getcited",
+  "mode": "offline",
+  "question": "Should I block GPTBot in robots.txt?",
+  "k": 5,
+  "fanout": [
+    {
+      "q": "Should I block GPTBot in robots.txt?",
+      "why": "the question as asked",
+      "winner": "wpghost.com"
+    },
+    {
+      "q": "block gptbot robots.txt",
+      "why": "key terms",
+      "winner": "wpghost.com"
+    }
+  ],
+  "standings": [
+    {
+      "label": "wpghost.com",
+      "url": "https://wpghost.com/block-gptbot-wordpress/",
+      "mine": false,
+      "ok": true,
+      "passages": 17,
+      "bestRank": 1,
+      "inContext": 3,
+      "share": 0.745,
+      "best": {
+        "heading": "Frequently asked questions › Is robots.txt enough to block GPTBot?",
+        "text": "For GPTBot itself, yes, because OpenAI states GPTBot honours it. It doesn’t stop scrapers that forge a user agent or skip robots.txt. A rewrite-layer rule returning 403 covers those.",
+        "words": 30,
+        "quality": 0.527
+      }
+    },
+    {
+      "label": "anglera.com",
+      "url": "https://www.anglera.com/glossary/gptbot",
+      "mine": false,
+      "ok": true,
+      "passages": 11,
+      "bestRank": 3,
+      "inContext": 2,
+      "share": 0.255,
+      "best": {
+        "heading": "Frequently asked questions › Does blocking GPTBot remove my site from ChatGPT?",
+        "text": "No. GPTBot is OpenAI's training crawler. ChatGPT's search features are served by OAI-SearchBot, a separate agent with its own robots.txt token. Blocking GPTBot leaves ChatGPT search access unaffected, and blocking OAI-SearchBot is what removes you from those results.",
+        "words": 39,
+        "quality": 0.56
+      }
+    },
+    {
+      "label": "pepper.inc",
+      "url": "https://www.pepper.inc/blog/oai-searchbot/",
+      "mine": false,
+      "ok": true,
+      "passages": 18,
+      "bestRank": 6,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "FAQs › Q1: What happens if I block OAI-SearchBot in my robots.txt?",
+        "text": "Your website content won’t appear in ChatGPT search results. Users asking questions that your site could answer simply won’t see your content referenced.",
+        "words": 23,
+        "quality": 0.61
+      }
+    },
+    {
+      "label": "1digitalagency.com",
+      "url": "https://www.1digitalagency.com/glossary/gptbot/",
+      "mine": false,
+      "ok": true,
+      "passages": 8,
+      "bestRank": 7,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "What is GPTBot? › FAQ",
+        "text": "What is the GPTBot user-agent string? The full string includes GPTBot as the identifier (e.g., Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)). OpenAI publishes the canonical UA list at openai.com/gptbot. Is GPTBot the only OpenAI crawler? No. OpenAI runs three distinct user-agents: GPTBot (training data), OAI-SearchBot (live web retrieval for ChatGPT Search), and ChatGPT-User (in-session fetches when a logged-in ChatGPT user pastes or shares a URL). All three need explicit allow rules in robots.txt; blocking any one forfeits a corresp…",
+        "words": 149,
+        "quality": 0.638
+      }
+    },
+    {
+      "label": "developers.openai.com",
+      "url": "https://developers.openai.com/api/docs/bots",
+      "mine": false,
+      "ok": true,
+      "passages": 4,
+      "bestRank": 29,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "Overview of OpenAI Crawlers",
+        "text": "OpenAI uses web crawlers (“robots”) and user agents to perform actions for its products, either automatically or triggered by user request. OpenAI uses OAI-SearchBot and GPTBot robots.txt tags to enable webmasters to manage how their sites and content work with AI. Each setting is independent of the others – for example, a webmaster can allow OAI-SearchBot in order to appear in search results while disallowing GPTBot to indicate that crawled content should not be used for training OpenAI’s generative AI foundation models. If your site has allowed both bots, we may use the results from just …",
+        "words": 132,
+        "quality": 0.62
+      }
+    }
+  ],
+  "context": [
+    {
+      "rank": 1,
+      "source": "wpghost.com",
+      "mine": false,
+      "heading": "Frequently asked questions › Is robots.txt enough to block GPTBot?",
+      "text": "For GPTBot itself, yes, because OpenAI states GPTBot honours it. It doesn’t stop scrapers that forge a user agent or skip robots.txt. A rewrite-layer rule returning 403 covers those.",
+      "words": 30,
+      "quality": 0.527
+    },
+    {
+      "rank": 2,
+      "source": "wpghost.com",
+      "mine": false,
+      "heading": "How to block GPTBot on WordPress in two layers",
+      "text": "Blocking a crawler well takes two layers. robots.txt is a published request that compliant crawlers read and honour. A server rule is the enforcement that applies when a request lies about who it is. Call the pair Dual-Layer Crawler Control. It matters because roughly 43% of the web runs on WordPress (W3Techs), which makes it a standing target for scrapers that forge a browser user agent and ignore robots.txt.",
+      "words": 71,
+      "quality": 0.68
+    },
+    {
+      "rank": 3,
+      "source": "anglera.com",
+      "mine": false,
+      "heading": "Frequently asked questions › Does blocking GPTBot remove my site from ChatGPT?",
+      "text": "No. GPTBot is OpenAI's training crawler. ChatGPT's search features are served by OAI-SearchBot, a separate agent with its own robots.txt token. Blocking GPTBot leaves ChatGPT search access unaffected, and blocking OAI-SearchBot is what removes you from those results.",
+      "words": 39,
+      "quality": 0.56
+    },
+    {
+      "rank": 4,
+      "source": "anglera.com",
+      "mine": false,
+      "heading": "GPTBot › Configuring it",
+      "text": "GPTBot obeys robots.txt and OpenAI publishes IP ranges for verification. A configuration that reflects a deliberate decision rather than an inherited copy-paste looks like this: Two practical notes. Verify by IP as well as user-agent string, since the string is trivially spoofed by scrapers. And if you block, expect a lag: robots.txt changes affect future crawls, not what was already collected.",
+      "words": 63,
+      "quality": 0.635
+    },
+    {
+      "rank": 5,
+      "source": "wpghost.com",
+      "mine": false,
+      "heading": "Layer 2: the rewrite-layer enforcement",
+      "text": "robots.txt is advisory. A scraper that spoofs GPTBot’s user-agent string, or never read your robots.txt, walks straight past it. So the block also belongs at the request layer, where a rule matches the user agent and rejects the request before WordPress loads. On Apache, a directive like this does it: This returns 403 to anything presenting as GPTBot, whether or not it respected robots.txt. Managing these rules by hand across robots.txt and .htaccess is fiddly and easy to break on the next core update. WP Ghost automates it with its firewall rules. It maintains a list of 30+ AI and scraper …",
+      "words": 139,
+      "quality": 0.544
+    }
+  ]
+}
