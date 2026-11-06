@@ -1,0 +1,234 @@
+{
+  "tool": "getcited",
+  "mode": "offline",
+  "question": "What happens to surplus funds after a tax deed sale in Florida?",
+  "k": 5,
+  "fanout": [
+    {
+      "q": "What happens to surplus funds after a tax deed sale in Florida?",
+      "why": "the question as asked",
+      "winner": "propertyonion.com"
+    },
+    {
+      "q": "happen surplus fund tax deed sale florida",
+      "why": "key terms",
+      "winner": "propertyonion.com"
+    },
+    {
+      "q": "happen surplus fund tax deed sale florida is a definition means refers",
+      "why": "definition",
+      "winner": "propertyonion.com"
+    }
+  ],
+  "standings": [
+    {
+      "label": "propertyonion.com",
+      "url": "https://propertyonion.com/education/florida-tax-deed-sale-surplus-funds/",
+      "mine": false,
+      "ok": true,
+      "passages": 11,
+      "bestRank": 1,
+      "inContext": 5,
+      "share": 1,
+      "best": {
+        "heading": "Florida Tax Deed Sale Surplus Funds – PropertyOnion",
+        "text": "When a Florida property sells at auction for more than the total amount owed to the foreclosing lienholder, the excess proceeds become florida tax deed sale surplus funds that must be distributed according to a strict legal priority order. You are the successful bidder at a tax deed auction! Congratulations! Now, what do you do about the liens of record? Is the surplus supposed to take care of every lien out there? Remember in Florida and most other states that a tax deed is superior to certain kinds of liens and, even if these kinds of liens do not get satisfied from sales surplus, the lie…",
+        "words": 142,
+        "quality": 0.456
+      }
+    },
+    {
+      "label": "m.flsenate.gov",
+      "url": "https://m.flsenate.gov/statutes/197.582",
+      "mine": false,
+      "ok": true,
+      "passages": 5,
+      "bestRank": 6,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "2026 Florida Statutes",
+        "text": "NOTICE OF SURPLUS FUNDSFROM TAX DEED SALE CLERK OF COURT COUNTY, FLORIDA Tax Deed # Certificate # Property Description: Pursuant to chapter 197, Florida Statutes, the above property was sold at public sale on (date of sale) , and a surplus of $ (amount) (subject to change) will be held by this office for 120 days beginning on the date of this notice to benefit the persons having an interest in this property as described in section 197.502(4), Florida Statutes, as their interests may appear (except for those persons described in section 197.502(4)(h), Florida Statutes). To the extent possibl…",
+        "words": 196,
+        "quality": 0.632
+      }
+    },
+    {
+      "label": "pascoclerk.com",
+      "url": "https://pascoclerk.com/839/Tax-Deed-Surplus",
+      "mine": false,
+      "ok": true,
+      "passages": 6,
+      "bestRank": 7,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "Tax Deed Surplus › Claiming Surplus Proceeds of a Tax Deed Sale",
+        "text": "If a property is purchased from a Tax Deed Sale for an amount in excess of the statutory bid of the certificate holder, the surplus must be paid over and disbursed by the Clerk. Pursuant to Florida Statutes 197.582, the claim period expires 120 days after the date of the mailed Notice of Surplus. A person, other than the property owner, who fails to file a proper and timely claim is barred from receiving any disbursement of the surplus funds. The Clerk and Comptroller’s Office must pay all valid liens before distributing to a titleholder and may request additional documentation to evaluate …",
+        "words": 157,
+        "quality": 0.66
+      }
+    },
+    {
+      "label": "surplusclock.com",
+      "url": "https://www.surplusclock.com/",
+      "mine": true,
+      "ok": true,
+      "passages": 27,
+      "bestRank": 16,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "Know which cases died, the day they die. Stop working dead cases. Audit us before you pay us.",
+        "text": "Continuous verification for Florida tax deed surplus cases. Revised surplus, a senior lien filed, funds disbursed or no longer held by the clerk: we tell you the day it changes, with the source document attached.",
+        "words": 35,
+        "quality": 0.61
+      }
+    },
+    {
+      "label": "sarasotaclerk.com",
+      "url": "https://www.sarasotaclerk.com/Home-and-Property/Tax-Deeds/Surplus-Funds-from-Tax-Deed-Sale",
+      "mine": false,
+      "ok": false,
+      "error": "HTTP 403",
+      "passages": 0,
+      "bestRank": null,
+      "inContext": 0,
+      "share": 0,
+      "best": null
+    },
+    {
+      "label": "barneswalker.com",
+      "url": "https://barneswalker.com/legal-glossary/t/tax-deed-sale-surplus-funds-florida/",
+      "mine": false,
+      "ok": false,
+      "error": "HTTP 403",
+      "passages": 0,
+      "bestRank": null,
+      "inContext": 0,
+      "share": 0,
+      "best": null
+    }
+  ],
+  "context": [
+    {
+      "rank": 1,
+      "source": "propertyonion.com",
+      "mine": false,
+      "heading": "Florida Tax Deed Sale Surplus Funds – PropertyOnion",
+      "text": "When a Florida property sells at auction for more than the total amount owed to the foreclosing lienholder, the excess proceeds become florida tax deed sale surplus funds that must be distributed according to a strict legal priority order. You are the successful bidder at a tax deed auction! Congratulations! Now, what do you do about the liens of record? Is the surplus supposed to take care of every lien out there? Remember in Florida and most other states that a tax deed is superior to certain kinds of liens and, even if these kinds of liens do not get satisfied from sales surplus, the lie…",
+      "words": 142,
+      "quality": 0.456
+    },
+    {
+      "rank": 2,
+      "source": "propertyonion.com",
+      "mine": false,
+      "heading": "Florida Tax Deed Sale Surplus Funds – PropertyOnion",
+      "text": "Certified copies of credit card judgments (I’m looking at you Capital One and Synchrony Bank) Association liens (condominium, community, or homeowners) Certain federal liens If there are no surplus funds left to satisfy these junior liens and they have been properly noticed of the tax deed sale, you’re golden. In this Article:",
+      "words": 52,
+      "quality": 0.345
+    },
+    {
+      "rank": 3,
+      "source": "propertyonion.com",
+      "mine": false,
+      "heading": "But What About Liens Superior to a Tax Deed?",
+      "text": "These are liens that were given special standing by the Florida legislature: county and municipal liens. How are these liens treated when a tax deed sale takes place? First, keep in mind that not every tax deed sale is going to have surplus funds. There will be many times when the winning bid is the starting bid. If your winning bid is above the starting bid, then there will be surplus funds. Which parties have access to surplus funds is determined by the priority given to that party under Florida statutes. Surplus funds are treated the same way, regardless of whether the minimum bid price …",
+      "words": 158,
+      "quality": 0.53
+    },
+    {
+      "rank": 4,
+      "source": "propertyonion.com",
+      "mine": false,
+      "heading": "Tax Deed Sale Surplus Scenario 2",
+      "text": "Tax Deed King LLC just won its first tax deed auction in Marion County. The starting bid amount was $10,000, and Tax Deed King LLC paid $25,000 as the winning bid.. Based on the Ownership and Encumbrance Report, Tax Deed King LLC knows that prior to the sale, the property was owned by Jennifer White. Liens on the property include: A first mortgage held by Bank Of America for $100,000 A second mortgage held by Wells Fargo for $10,000 A Chase credit card certified judgment for $5,000 A city mowing lien, which has been accumulating daily penalties since it was entered two years ago, for $20,00…",
+      "words": 142,
+      "quality": 0.664
+    },
+    {
+      "rank": 5,
+      "source": "propertyonion.com",
+      "mine": false,
+      "heading": "Tax Deed Sale Surplus Scenario 1",
+      "text": "Tax Deed King LLC just won its first tax deed auction in Marion County. The starting bid amount was $10,000, and Tax Deed King LLC paid $80,000 as the winning bid. The property is a 3/2 residential property located in an older neighborhood. Based on the Ownership and Encumbrance Report, Tax Deed King LLC knows that, prior to the sale, the property was owned by Jennifer White. Liens on the property include: A purchase money mortgage held by Bank of America for $100,000 A second mortgage held by Wells Fargo for $10,000 A Chase credit card certified judgment for $5,000 A city mowing lien, whic…",
+      "words": 155,
+      "quality": 0.703
+    }
+  ],
+  "gap": {
+    "rank": 16,
+    "inContext": 0,
+    "share": 0,
+    "won": false,
+    "winner": {
+      "source": "propertyonion.com",
+      "heading": "Florida Tax Deed Sale Surplus Funds – PropertyOnion"
+    },
+    "missingTerms": [],
+    "advice": [
+      "Your best passage (\"Know which cases died, the day they die. Stop working dead cases. Audit us before you pay us.\") doesn't contain \"happens\", \"sale\"; those words are elsewhere on the page. Put the answer and the question's words in the same short paragraph.",
+      "The winning passage (propertyonion.com) covers \"sale\" in one place; yours doesn't."
+    ]
+  },
+  "live": {
+    "model": "github:openai/gpt-4.1-mini",
+    "samples": 3,
+    "share": [
+      {
+        "label": "surplusclock.com",
+        "mine": true,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "sarasotaclerk.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "m.flsenate.gov",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "pascoclerk.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "barneswalker.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "propertyonion.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      }
+    ],
+    "mineCitedIn": 0,
+    "answer": "",
+    "answers": [
+      {
+        "answer": "",
+        "cited": []
+      },
+      {
+        "answer": "",
+        "cited": []
+      },
+      {
+        "answer": "",
+        "cited": []
+      }
+    ],
+    "errors": []
+  }
+}

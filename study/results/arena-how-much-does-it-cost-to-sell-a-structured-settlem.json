@@ -1,0 +1,234 @@
+{
+  "tool": "getcited",
+  "mode": "offline",
+  "question": "How much does it cost to sell a structured settlement?",
+  "k": 5,
+  "fanout": [
+    {
+      "q": "How much does it cost to sell a structured settlement?",
+      "why": "the question as asked",
+      "winner": "peachtreefinancial.com"
+    },
+    {
+      "q": "cost sell structur settlement",
+      "why": "key terms",
+      "winner": "peachtreefinancial.com"
+    },
+    {
+      "q": "cost sell structur settlement price cost per month plan fee",
+      "why": "pricing",
+      "winner": "peachtreefinancial.com"
+    }
+  ],
+  "standings": [
+    {
+      "label": "peachtreefinancial.com",
+      "url": "https://peachtreefinancial.com/how-much-does-it-cost-to-sell-a-structured-settlement/",
+      "mine": false,
+      "ok": true,
+      "passages": 22,
+      "bestRank": 1,
+      "inContext": 5,
+      "share": 1,
+      "best": {
+        "heading": "How to minimize costs when selling a structured settlement payment",
+        "text": "To keep costs down when selling your structured settlement: Shop around: Get quotes from multiple structured settlement buying companies to find the best discount rate. Only sell what you need: Selling a portion of your settlement rather than all of it can help minimize the impact of the discount rate. Negotiate fees: Some companies may be willing to reduce or waive certain fees, especially for larger settlements. Understand the process: Being prepared can help reduce legal costs and prevent delays. Consider alternatives: Explore other financial options before committing to selling your set…",
+        "words": 93,
+        "quality": 0.696
+      }
+    },
+    {
+      "label": "catalinastructuredfunding.com",
+      "url": "https://www.catalinastructuredfunding.com/structured-settlements/buyout",
+      "mine": false,
+      "ok": true,
+      "passages": 20,
+      "bestRank": 6,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "What Is a Structured Settlement Buyout? A Plain-English Guide › When Does a Structured Settlement Buyout Make Sense?",
+        "text": "Use cases that usually do not pencil out: Speculation. Buying crypto, options, or any high-volatility asset with structured settlement proceeds is statistically a way to lose both the lump sum and the future income stream. Lifestyle spending. Vacations, luxury vehicles, discretionary purchases. The buyout cost is real; the lifestyle benefit fades. Replacing a temporary income gap. If your payments are covering rent and groceries, selling them likely creates a worse problem 18 months out. We are an attorney-owned firm and we will tell you honestly if your situation does not fit a buyout. For…",
+        "words": 109,
+        "quality": 0.546
+      }
+    },
+    {
+      "label": "settlementdecisions.com",
+      "url": "https://www.settlementdecisions.com/",
+      "mine": true,
+      "ok": true,
+      "passages": 22,
+      "bestRank": 22,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "Know what your structured settlement, annuity or lottery prize is really worth.Know what yoursettlementis really worth. › Questions people ask first",
+        "text": "No. Partial sales are common. You can sell a set number of payments, part of each payment, or a fixed dollar amount, and keep the rest. Buyers apply a discount rate, often between 9% and 15%, which sets how much less than face value you receive. Getting competing quotes is the most reliable way to lower it. As a rule of thumb, under 10% is strong, 10% to 13% is fair, and 14% or more is unfavorable. Your rate depends on your payment term, amount, the insurer and how many competing offers you get. Yes. A judge can deny a sale that isn't in your best interest, for example when the discount rat…",
+        "words": 130,
+        "quality": 0.563
+      }
+    },
+    {
+      "label": "bankrate.com",
+      "url": "https://www.bankrate.com/personal-finance/",
+      "mine": false,
+      "ok": true,
+      "passages": 13,
+      "bestRank": 36,
+      "inContext": 0,
+      "share": 0,
+      "best": {
+        "heading": "12 million Americans live in banking deserts. How hidden costs hold them back",
+        "text": "Without nearby banks, consumers pay more to cash checks, borrow money and save.",
+        "words": 13,
+        "quality": 0.58
+      }
+    },
+    {
+      "label": "retirementliving.com",
+      "url": "https://www.retirementliving.com/how-to-sell-structured-settlement",
+      "mine": false,
+      "ok": false,
+      "error": "HTTP 403",
+      "passages": 0,
+      "bestRank": null,
+      "inContext": 0,
+      "share": 0,
+      "best": null
+    },
+    {
+      "label": "consumeraffairs.com",
+      "url": "https://www.consumeraffairs.com/finance/structured-settlement.html",
+      "mine": false,
+      "ok": false,
+      "error": "HTTP 403",
+      "passages": 0,
+      "bestRank": null,
+      "inContext": 0,
+      "share": 0,
+      "best": null
+    }
+  ],
+  "context": [
+    {
+      "rank": 1,
+      "source": "peachtreefinancial.com",
+      "mine": false,
+      "heading": "How to minimize costs when selling a structured settlement payment",
+      "text": "To keep costs down when selling your structured settlement: Shop around: Get quotes from multiple structured settlement buying companies to find the best discount rate. Only sell what you need: Selling a portion of your settlement rather than all of it can help minimize the impact of the discount rate. Negotiate fees: Some companies may be willing to reduce or waive certain fees, especially for larger settlements. Understand the process: Being prepared can help reduce legal costs and prevent delays. Consider alternatives: Explore other financial options before committing to selling your set…",
+      "words": 93,
+      "quality": 0.696
+    },
+    {
+      "rank": 2,
+      "source": "peachtreefinancial.com",
+      "mine": false,
+      "heading": "How Much Does It Cost to Sell a Structured Settlement?",
+      "text": "Structured settlements can provide long-term financial security, but life circumstances may necessitate selling these payments for a lump sum. If you’re considering this option, one of your primary concerns is likely the cost involved. Let’s break down the various expenses associated with selling a structured settlement so that you can make an informed decision.",
+      "words": 54,
+      "quality": 0.667
+    },
+    {
+      "rank": 3,
+      "source": "peachtreefinancial.com",
+      "mine": false,
+      "heading": "Hidden costs to consider › Factors influencing the overall cost",
+      "text": "Several factors can influence how much it costs to sell your structured settlement: The amount you’re selling: Selling a larger portion of your settlement often results in a better discount rate. Payment schedule: Payments due sooner are typically valued higher than those far in the future. Market conditions: Interest rates and economic factors can affect discount rates. Your state’s laws: Some states have more stringent requirements, potentially increasing legal costs. The purchasing company: Different companies offer different rates and fee structures.",
+      "words": 81,
+      "quality": 0.696
+    },
+    {
+      "rank": 4,
+      "source": "peachtreefinancial.com",
+      "mine": false,
+      "heading": "Direct costs of selling a structured settlement › 1. Court fees",
+      "text": "Estimated cost: $100 – $500 Selling a structured settlement requires court approval in most states. Court fees can vary depending on your location but typically range from $100 to $500.",
+      "words": 29,
+      "quality": 0.86
+    },
+    {
+      "rank": 5,
+      "source": "peachtreefinancial.com",
+      "mine": false,
+      "heading": "Direct costs of selling a structured settlement › Indirect costs: The discount rate",
+      "text": "The most significant “cost” of selling your structured settlement is not a direct expense but rather the discount rate applied to your future payments. Estimated cost: 9% – 18% of your settlement’s value* When you sell your structured settlement payments, the purchasing company will offer you a lump sum that’s less than the total value of your future payments. The difference is expressed as a discount rate, typically ranging from 9% to 18%. Factors affecting the discount rate include: Current market interest rates. The total value of your settlement. The time frame of your payments. \"*\" ind…",
+      "words": 97,
+      "quality": 0.687
+    }
+  ],
+  "gap": {
+    "rank": 22,
+    "inContext": 0,
+    "share": 0,
+    "won": false,
+    "winner": {
+      "source": "peachtreefinancial.com",
+      "heading": "How to minimize costs when selling a structured settlement payment"
+    },
+    "missingTerms": [],
+    "advice": [
+      "Your best passage (\"Know what your structured settlement, annuity or lottery prize is really worth.Know what yoursettlementis really worth. › Questions people ask first\") doesn't contain \"cost\"; those words are elsewhere on the page. Put the answer and the question's words in the same short paragraph.",
+      "The winning passage (peachtreefinancial.com) covers \"cost\" in one place; yours doesn't."
+    ]
+  },
+  "live": {
+    "model": "github:openai/gpt-4.1-mini",
+    "samples": 3,
+    "share": [
+      {
+        "label": "settlementdecisions.com",
+        "mine": true,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "bankrate.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "peachtreefinancial.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "retirementliving.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "consumeraffairs.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      },
+      {
+        "label": "catalinastructuredfunding.com",
+        "mine": false,
+        "citedIn": 0,
+        "share": 0
+      }
+    ],
+    "mineCitedIn": 0,
+    "answer": "",
+    "answers": [
+      {
+        "answer": "",
+        "cited": []
+      },
+      {
+        "answer": "",
+        "cited": []
+      },
+      {
+        "answer": "",
+        "cited": []
+      }
+    ],
+    "errors": []
+  }
+}
