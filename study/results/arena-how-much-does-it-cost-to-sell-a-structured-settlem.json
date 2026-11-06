@@ -102,7 +102,7 @@
       "url": "https://www.consumeraffairs.com/finance/structured-settlement.html",
       "mine": false,
       "ok": false,
-      "error": "HTTP 403",
+      "error": "HTTP 404",
       "passages": 0,
       "bestRank": null,
       "inContext": 0,
@@ -174,61 +174,6 @@
   },
   "live": {
     "model": "github:openai/gpt-4.1-mini",
-    "samples": 3,
-    "share": [
-      {
-        "label": "settlementdecisions.com",
-        "mine": true,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "bankrate.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "peachtreefinancial.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "retirementliving.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "consumeraffairs.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "catalinastructuredfunding.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      }
-    ],
-    "mineCitedIn": 0,
-    "answer": "",
-    "answers": [
-      {
-        "answer": "",
-        "cited": []
-      },
-      {
-        "answer": "",
-        "cited": []
-      },
-      {
-        "answer": "",
-        "cited": []
-      }
-    ],
-    "errors": []
+    "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
   }
 }

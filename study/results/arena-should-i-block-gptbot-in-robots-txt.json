@@ -146,55 +146,6 @@
   ],
   "live": {
     "model": "github:openai/gpt-4.1-mini",
-    "samples": 3,
-    "share": [
-      {
-        "label": "developers.openai.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "1digitalagency.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "wpghost.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "pepper.inc",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "anglera.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      }
-    ],
-    "mineCitedIn": 0,
-    "answer": "",
-    "answers": [
-      {
-        "answer": "",
-        "cited": []
-      },
-      {
-        "answer": "",
-        "cited": []
-      },
-      {
-        "answer": "",
-        "cited": []
-      }
-    ],
-    "errors": []
+    "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
   }
 }

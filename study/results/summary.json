@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-11-06T19:40:17.337Z",
+  "ranAt": "2026-11-06T19:42:25.118Z",
   "runner": "Linux",
   "model": "github:openai/gpt-4.1-mini",
   "questions": [
@@ -57,7 +57,7 @@
           "url": "https://www.consumeraffairs.com/finance/structured-settlement.html",
           "mine": false,
           "ok": false,
-          "error": "HTTP 403",
+          "error": "HTTP 404",
           "share": 0,
           "bestRank": null,
           "passages": 0
@@ -85,46 +85,7 @@
       },
       "live": {
         "model": "github:openai/gpt-4.1-mini",
-        "samples": 3,
-        "share": [
-          {
-            "label": "settlementdecisions.com",
-            "mine": true,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "bankrate.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "peachtreefinancial.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "retirementliving.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "consumeraffairs.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "catalinastructuredfunding.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          }
-        ],
-        "answer": ""
+        "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
       }
     },
     {
@@ -135,7 +96,7 @@
           "url": "https://propertyonion.com/education/florida-tax-deed-sale-surplus-funds/",
           "mine": false,
           "ok": true,
-          "share": 1,
+          "share": 0.891,
           "bestRank": 1,
           "passages": 11
         },
@@ -144,8 +105,8 @@
           "url": "https://m.flsenate.gov/statutes/197.582",
           "mine": false,
           "ok": true,
-          "share": 0,
-          "bestRank": 6,
+          "share": 0.109,
+          "bestRank": 4,
           "passages": 5
         },
         {
@@ -209,46 +170,7 @@
       },
       "live": {
         "model": "github:openai/gpt-4.1-mini",
-        "samples": 3,
-        "share": [
-          {
-            "label": "surplusclock.com",
-            "mine": true,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "sarasotaclerk.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "m.flsenate.gov",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "pascoclerk.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "barneswalker.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "propertyonion.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          }
-        ],
-        "answer": ""
+        "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
       }
     },
     {
@@ -308,40 +230,7 @@
       "gap": null,
       "live": {
         "model": "github:openai/gpt-4.1-mini",
-        "samples": 3,
-        "share": [
-          {
-            "label": "en.wikipedia.org",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "conductor.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "precis.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "onesignal.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "arcintermedia.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          }
-        ],
-        "answer": ""
+        "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
       }
     },
     {
@@ -401,40 +290,7 @@
       "gap": null,
       "live": {
         "model": "github:openai/gpt-4.1-mini",
-        "samples": 3,
-        "share": [
-          {
-            "label": "llmstxt.org",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "mintlify.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "mailmodo.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "cloro.dev",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "joinmassive.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          }
-        ],
-        "answer": ""
+        "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
       }
     },
     {
@@ -494,40 +350,7 @@
       "gap": null,
       "live": {
         "model": "github:openai/gpt-4.1-mini",
-        "samples": 3,
-        "share": [
-          {
-            "label": "developers.openai.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "1digitalagency.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "wpghost.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "pepper.inc",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          },
-          {
-            "label": "anglera.com",
-            "mine": false,
-            "citedIn": 0,
-            "share": 0
-          }
-        ],
-        "answer": ""
+        "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
       }
     }
   ],
@@ -663,13 +486,13 @@
     {
       "url": "https://pascoclerk.com/839/Tax-Deed-Surplus",
       "sentences": 22,
-      "quotable": 4,
-      "weak": 11,
+      "quotable": 5,
+      "weak": 10,
       "dead": 7,
-      "quotableShare": 18,
+      "quotableShare": 23,
       "deadWordShare": 6,
-      "perHundredWords": 1.42,
-      "average": 46,
+      "perHundredWords": 1.76,
+      "average": 47,
       "firstQuotable": 6
     },
     {
@@ -770,13 +593,13 @@
     },
     {
       "url": "https://www.mailmodo.com/guides/llms-txt/",
-      "sentences": 129,
-      "quotable": 7,
-      "weak": 73,
+      "sentences": 130,
+      "quotable": 9,
+      "weak": 72,
       "dead": 49,
-      "quotableShare": 5,
+      "quotableShare": 7,
       "deadWordShare": 18,
-      "perHundredWords": 0.46,
+      "perHundredWords": 0.59,
       "average": 42,
       "firstQuotable": 10
     },
@@ -867,22 +690,12 @@
   ],
   "truth": [
     {
-      "tool": "getcited",
       "brand": "SettlementDecisions",
-      "model": "github:openai/gpt-4.1-mini",
-      "known": false,
-      "claims": [],
-      "accuracy": null,
-      "summary": "github:openai/gpt-4.1-mini says it doesn't know SettlementDecisions. That's a visibility gap, not a lie: the model has nothing to cite."
+      "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
     },
     {
-      "tool": "getcited",
       "brand": "Surplus Clock",
-      "model": "github:openai/gpt-4.1-mini",
-      "known": false,
-      "claims": [],
-      "accuracy": null,
-      "summary": "github:openai/gpt-4.1-mini says it doesn't know Surplus Clock. That's a visibility gap, not a lie: the model has nothing to cite."
+      "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
     }
   ],
   "probe": [
@@ -922,7 +735,7 @@
     },
     {
       "url": "https://www.consumeraffairs.com/finance/structured-settlement.html",
-      "error": "HTTP 403"
+      "error": "HTTP 404"
     },
     {
       "url": "https://www.catalinastructuredfunding.com/structured-settlements/buyout",
@@ -950,7 +763,7 @@
     },
     {
       "url": "https://m.flsenate.gov/statutes/197.582",
-      "score": 72,
+      "score": 73,
       "cdn": "pass",
       "cdnEvidence": "OAI-SearchBot 200, GPTBot 200, ClaudeBot 200, PerplexityBot 200: same content as a browser.",
       "robots": "pass",

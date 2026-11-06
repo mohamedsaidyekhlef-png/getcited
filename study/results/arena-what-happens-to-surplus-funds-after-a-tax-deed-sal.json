@@ -28,8 +28,8 @@
       "ok": true,
       "passages": 11,
       "bestRank": 1,
-      "inContext": 5,
-      "share": 1,
+      "inContext": 4,
+      "share": 0.891,
       "best": {
         "heading": "Florida Tax Deed Sale Surplus Funds – PropertyOnion",
         "text": "When a Florida property sells at auction for more than the total amount owed to the foreclosing lienholder, the excess proceeds become florida tax deed sale surplus funds that must be distributed according to a strict legal priority order. You are the successful bidder at a tax deed auction! Congratulations! Now, what do you do about the liens of record? Is the surplus supposed to take care of every lien out there? Remember in Florida and most other states that a tax deed is superior to certain kinds of liens and, even if these kinds of liens do not get satisfied from sales surplus, the lie…",
@@ -43,13 +43,13 @@
       "mine": false,
       "ok": true,
       "passages": 5,
-      "bestRank": 6,
-      "inContext": 0,
-      "share": 0,
+      "bestRank": 4,
+      "inContext": 1,
+      "share": 0.109,
       "best": {
         "heading": "2026 Florida Statutes",
-        "text": "NOTICE OF SURPLUS FUNDSFROM TAX DEED SALE CLERK OF COURT COUNTY, FLORIDA Tax Deed # Certificate # Property Description: Pursuant to chapter 197, Florida Statutes, the above property was sold at public sale on (date of sale) , and a surplus of $ (amount) (subject to change) will be held by this office for 120 days beginning on the date of this notice to benefit the persons having an interest in this property as described in section 197.502(4), Florida Statutes, as their interests may appear (except for those persons described in section 197.502(4)(h), Florida Statutes). To the extent possibl…",
-        "words": 196,
+        "text": "NOTICE OF SURPLUS FUNDS FROM TAX DEED SALE CLERK OF COURT COUNTY, FLORIDA Tax Deed # Certificate # Property Description: Pursuant to chapter 197, Florida Statutes, the above property was sold at public sale on (date of sale) , and a surplus of $ (amount) (subject to change) will be held by this office for 120 days beginning on the date of this notice to benefit the persons having an interest in this property as described in section 197.502(4), Florida Statutes, as their interests may appear (except for those persons described in section 197.502(4)(h), Florida Statutes). To the extent possib…",
+        "words": 197,
         "quality": 0.632
       }
     },
@@ -140,21 +140,21 @@
     },
     {
       "rank": 4,
+      "source": "m.flsenate.gov",
+      "mine": false,
+      "heading": "2026 Florida Statutes",
+      "text": "NOTICE OF SURPLUS FUNDS FROM TAX DEED SALE CLERK OF COURT COUNTY, FLORIDA Tax Deed # Certificate # Property Description: Pursuant to chapter 197, Florida Statutes, the above property was sold at public sale on (date of sale) , and a surplus of $ (amount) (subject to change) will be held by this office for 120 days beginning on the date of this notice to benefit the persons having an interest in this property as described in section 197.502(4), Florida Statutes, as their interests may appear (except for those persons described in section 197.502(4)(h), Florida Statutes). To the extent possib…",
+      "words": 197,
+      "quality": 0.632
+    },
+    {
+      "rank": 5,
       "source": "propertyonion.com",
       "mine": false,
       "heading": "Tax Deed Sale Surplus Scenario 2",
       "text": "Tax Deed King LLC just won its first tax deed auction in Marion County. The starting bid amount was $10,000, and Tax Deed King LLC paid $25,000 as the winning bid.. Based on the Ownership and Encumbrance Report, Tax Deed King LLC knows that prior to the sale, the property was owned by Jennifer White. Liens on the property include: A first mortgage held by Bank Of America for $100,000 A second mortgage held by Wells Fargo for $10,000 A Chase credit card certified judgment for $5,000 A city mowing lien, which has been accumulating daily penalties since it was entered two years ago, for $20,00…",
       "words": 142,
       "quality": 0.664
-    },
-    {
-      "rank": 5,
-      "source": "propertyonion.com",
-      "mine": false,
-      "heading": "Tax Deed Sale Surplus Scenario 1",
-      "text": "Tax Deed King LLC just won its first tax deed auction in Marion County. The starting bid amount was $10,000, and Tax Deed King LLC paid $80,000 as the winning bid. The property is a 3/2 residential property located in an older neighborhood. Based on the Ownership and Encumbrance Report, Tax Deed King LLC knows that, prior to the sale, the property was owned by Jennifer White. Liens on the property include: A purchase money mortgage held by Bank of America for $100,000 A second mortgage held by Wells Fargo for $10,000 A Chase credit card certified judgment for $5,000 A city mowing lien, whic…",
-      "words": 155,
-      "quality": 0.703
     }
   ],
   "gap": {
@@ -174,61 +174,6 @@
   },
   "live": {
     "model": "github:openai/gpt-4.1-mini",
-    "samples": 3,
-    "share": [
-      {
-        "label": "surplusclock.com",
-        "mine": true,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "sarasotaclerk.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "m.flsenate.gov",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "pascoclerk.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "barneswalker.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      },
-      {
-        "label": "propertyonion.com",
-        "mine": false,
-        "citedIn": 0,
-        "share": 0
-      }
-    ],
-    "mineCitedIn": 0,
-    "answer": "",
-    "answers": [
-      {
-        "answer": "",
-        "cited": []
-      },
-      {
-        "answer": "",
-        "cited": []
-      },
-      {
-        "answer": "",
-        "cited": []
-      }
-    ],
-    "errors": []
+    "error": "github:openai/gpt-4.1-mini: empty reply (finish_reason: none; response: OK\r\n)"
   }
 }
