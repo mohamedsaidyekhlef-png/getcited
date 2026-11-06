@@ -40,7 +40,7 @@ export function xrayHtml(url, x) {
 export function arenaTerminal(r, color) {
   const c = colors(color), L = [];
   L.push("", c.b(`getcited arena  "${r.question}"`));
-  L.push(c.d(`  fan-out: ${r.fanout.map((f) => f.why).join(" · ")}   context: top ${r.k} passages`));
+  L.push(c.d(`  fan-out: ${r.fanout.map((f) => f.why).join(" · ")}   context: top ${r.k} passages   retrieval: ${r.retrieval || "bm25"}`));
   L.push("", c.b("Citation share (offline retrieval)"));
   for (const s of r.standings) {
     const name = (s.mine ? "★ " : "  ") + clip(s.label, 28);
@@ -105,6 +105,36 @@ export function testMarkdown(run) {
   if (fixes.length) out.push("", "**How to fix**", "", ...fixes.map((t) => `- ${t.question ? `_${t.question}_: ` : ""}${t.advice}`));
   out.push("", "<sub>[getcited](https://github.com/mohamedsaidyekhlef-png/getcited) citation tests</sub>", "");
   return out.join("\n");
+}
+
+// ---------- regression diff ----------
+export function diffTerminal(d, color) {
+  const c = colors(color), L = [];
+  const icon = { regression: c.r("▼"), improvement: c.g("▲"), info: c.d("•") };
+  L.push(c.b(`Changes since ${d.since.slice(0, 16).replace("T", " ")}`) + "  " + (d.regressions ? c.r(`${d.regressions} regression(s)`) : c.g("no regressions")) + (d.improvements ? c.g(`, ${d.improvements} improvement(s)`) : ""));
+  if (!d.changes.length) L.push(c.d("  nothing changed"));
+  for (const ch of d.changes) L.push(`  ${icon[ch.severity]} ${ch.question ? c.d(clip(ch.question, 50) + ": ") : ""}${ch.text}`);
+  L.push("");
+  return L.join("\n");
+}
+
+export function diffMarkdown(d) {
+  const icon = { regression: "🔻", improvement: "🔺", info: "•" };
+  const out = [`#### Changes since ${d.since.slice(0, 16).replace("T", " ")} UTC: ${d.regressions} regression(s), ${d.improvements} improvement(s)`, ""];
+  if (!d.changes.length) out.push("Nothing changed.");
+  for (const ch of d.changes) out.push(`- ${icon[ch.severity]} ${ch.question ? `_${ch.question}_: ` : ""}${ch.text}`);
+  return out.join("\n") + "\n";
+}
+
+// ---------- bench ----------
+export function benchTerminal(b, color) {
+  const c = colors(color), L = ["", c.b(`getcited bench  arena (${b.retrieval}) vs ${b.engine}`)];
+  for (const r of b.rows) {
+    if (r.error) { L.push(`  ${c.y("○")} ${r.ask}  ${c.d(r.error)}`); continue; }
+    L.push(`  ${r.top1Cited ? c.g("✓") : r.top1Cited === false ? c.r("✗") : c.d("○")} ${r.ask}  ${c.d(`predicted #1: ${r.predicted[0]?.label} · engine cited ${r.citedCandidates}/${r.candidates} candidates`)}`);
+  }
+  L.push("", b.scored ? `Top-1 accuracy ${c.b(pct(b.top1))} (random baseline ${pct(b.baselineTop1)}) · precision@n ${c.b(pct(b.precisionAtN))} over ${b.scored} question(s)` : c.y("No question could be scored."), "");
+  return L.join("\n");
 }
 
 // ---------- truth ----------

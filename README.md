@@ -14,7 +14,9 @@
 ![No API key needed](https://img.shields.io/badge/API%20key-not%20needed-13865A.svg)
 ![MCP server](https://img.shields.io/badge/MCP-server-3D4FE0.svg)
 
-**[Arena](#-arena-who-gets-cited-and-why) · [X-ray](#-x-ray-what-an-ai-would-quote) · [Tests in CI](#-citation-tests-in-ci) · [Truth](#-truth-what-ai-gets-wrong-about-you) · [Audit](#-audit-can-ai-even-reach-you) · [Agent skill & MCP](#-agent-skill-and-mcp-server)**
+**[Arena](#-arena-who-gets-cited-and-why) · [X-ray](#-x-ray-what-an-ai-would-quote) · [Tests in CI](#-citation-tests-in-ci) · [Regressions](#-regression-monitoring) · [Truth](#-truth-what-ai-gets-wrong-about-you) · [Audit](#-audit-can-ai-even-reach-you) · [Bench](#-prove-it-bench-against-a-real-engine) · [Agent skill & MCP](#-agent-skill-and-mcp-server)**
+
+<sub>AI search testing infrastructure: open-source CLI, GitHub Action and MCP server.</sub>
 
 </div>
 
@@ -152,6 +154,26 @@ A **README badge** is a [shields.io endpoint](https://shields.io/badges/endpoint
 
 ![AI citation tests: example badge](https://img.shields.io/badge/AI%20citation%20tests-4%2F4%20passing-brightgreen)
 
+## 📉 Regression monitoring
+
+Every `getcited test` run is saved to `.getcited/history` and compared with the previous one. The diff tells you **what** changed and **why**:
+
+```
+Changes since 2026-11-06 19:12  3 regression(s)
+  ▼ How much does a buyout cost?: citation share 80% → 0%
+  ▼ How much does a buyout cost?: your passage "Structured settlement buyout cost by discount rate" dropped out of the context (edited, moved or outranked)
+  ▼ test now failing: How much does a buyout cost?  →  top3 (rank 9, want top 3; winner: settlewise.example)
+  • How much does a buyout cost?: forum.example entered the context
+```
+
+Things it catches:
+- a passage that dropped out of the context
+- a competitor that took the top slot
+- a page that stopped loading
+- an audit check that started failing
+
+Add `--fail-on-regression` to block the PR on any of these. The GitHub Action keeps the history in the Actions cache, so every PR is compared with the last run on that branch. `getcited diff old.json new.json` compares any two runs.
+
 ## 🕵️ Truth: what AI gets wrong about you
 
 When a model answers without searching, it answers from memory, and memory is often wrong about smaller brands.
@@ -194,6 +216,33 @@ getcited https://yoursite.com --pages 10 --html report.html --fix ./geo-fixes
 
 <details><summary>See an audit report</summary><br><img src="docs/report-bad.png" alt="A getcited audit scoring 15/100" width="100%"></details>
 
+## 🎯 Prove it: bench against a real engine
+
+An arena that doesn't predict real citations is just a nice chart. `getcited bench` measures that, so the arena's accuracy can be checked rather than claimed:
+
+```yaml
+# bench.yml: questions, the candidate pages, and (optionally) what an engine actually cited
+questions:
+  - ask: What is llms.txt?
+    pages: [https://llmstxt.org/, https://www.mintlify.com/blog/what-is-llms-txt, https://cloro.dev/blog/llms-txt/]
+    observed: [https://llmstxt.org/]        # copy from ChatGPT/Perplexity/AI Overviews, or let --observe fetch it
+```
+
+```bash
+getcited bench bench.yml                                   # against citations you recorded
+getcited bench bench.yml --observe perplexity:sonar        # against Perplexity's live citations (PERPLEXITY_API_KEY)
+getcited bench bench.yml --embed openai:text-embedding-3-small   # does hybrid retrieval predict better?
+```
+
+It reports, over the candidate pages:
+- **top-1 accuracy**: is the arena's #1 page one the engine cited?
+- **precision@n**
+- **the random baseline** to beat
+
+### Hybrid retrieval
+
+`--embed provider:model` adds dense, embedding-based retrieval to BM25 and fuses both rankings per sub-query, the way modern hybrid search does. It works with any OpenAI-compatible embeddings endpoint, including a local `ollama:nomic-embed-text`.
+
 ## 🤖 Agent skill and MCP server
 
 **As a skill**, for Claude Code, Codex, Cursor, OpenCode and Gemini CLI:
@@ -229,6 +278,7 @@ Live mode is optional and uses your key. getcited never stores it or writes it t
 | `anthropic:<model>` | `ANTHROPIC_API_KEY` |
 | `gemini:<model>` · `openrouter:<model>` · `groq:<model>` · `mistral:<model>` · `deepseek:<model>` | `GEMINI_API_KEY` · `OPENROUTER_API_KEY` · … |
 | `ollama:<model>` · `lmstudio:<model>` | none: runs on your machine |
+| `perplexity:<model>` | `PERPLEXITY_API_KEY`: a real answer engine, used by `bench --observe` |
 
 ## FAQ
 
@@ -251,7 +301,7 @@ Live mode is optional and uses your key. getcited never stores it or writes it t
 | Sentence scoring | [`src/xray.mjs`](src/xray.mjs) |
 | Audit checks | [`src/checks.mjs`](src/checks.mjs) |
 
-`npm test` runs 17 tests end to end: a local good site and a broken one, before/after arena fixtures, a mock OpenAI and Anthropic server for live mode and truth, and the MCP handshake.
+`npm test` runs 20 tests end to end: a local good site and a broken one, before/after arena fixtures, a mock OpenAI and Anthropic server for live mode and truth, and the MCP handshake.
 
 ## License
 

@@ -14,6 +14,7 @@ const PRESETS = {
   ollama: { base: "http://localhost:11434/v1", key: null, wire: "openai" },
   lmstudio: { base: "http://localhost:1234/v1", key: null, wire: "openai" },
   anthropic: { base: "https://api.anthropic.com/v1", key: "ANTHROPIC_API_KEY", wire: "anthropic" },
+  perplexity: { base: "https://api.perplexity.ai", key: "PERPLEXITY_API_KEY", wire: "openai" }, // a real answer engine: returns the URLs it cited
 };
 
 /**
@@ -83,4 +84,54 @@ export function extractJson(text) {
     try { return JSON.parse(src.slice(start, end)); } catch { /* keep shrinking */ }
   }
   return null;
+}
+
+/** Embeddings from any OpenAI-compatible /embeddings endpoint (OpenAI, Gemini, Mistral, Ollama, LM Studio…). */
+export async function embed(cfg, inputs, { batch = 64, timeoutMs = 90000 } = {}) {
+  if (cfg.wire !== "openai") throw new Error(`${cfg.label}: embeddings need an OpenAI-compatible provider`);
+  const out = [];
+  for (let i = 0; i < inputs.length; i += batch) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const headers = { "content-type": "application/json" };
+      if (cfg.key && cfg.key !== "local") headers.authorization = `Bearer ${cfg.key}`;
+      const res = await fetch(`${cfg.base}/embeddings`, { method: "POST", signal: ctrl.signal, headers, body: JSON.stringify({ model: cfg.model, input: inputs.slice(i, i + batch) }) });
+      const raw = await res.text();
+      let body = {};
+      try { body = JSON.parse(raw); } catch { /* reported below */ }
+      if (!res.ok || !Array.isArray(body.data)) throw new Error(body?.error?.message || `HTTP ${res.status}: ${raw.slice(0, 160)}`);
+      for (const d of [...body.data].sort((a, b) => (a.index ?? 0) - (b.index ?? 0))) out.push(d.embedding);
+    } catch (e) {
+      throw new Error(`${cfg.label} embeddings: ${e.name === "AbortError" ? "timed out" : e.message}`);
+    } finally { clearTimeout(t); }
+  }
+  return out;
+}
+
+export function cosine(a, b) {
+  let d = 0, x = 0, y = 0;
+  for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; }
+  return x && y ? d / Math.sqrt(x * y) : 0;
+}
+
+/** Ask an answer engine a question and return its answer plus the URLs it cited (Perplexity-style APIs). */
+export async function askEngine(cfg, question, { timeoutMs = 120000 } = {}) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${cfg.base}/chat/completions`, {
+      method: "POST", signal: ctrl.signal,
+      headers: { "content-type": "application/json", authorization: `Bearer ${cfg.key}` },
+      body: JSON.stringify({ model: cfg.model, messages: [{ role: "user", content: question }] }),
+    });
+    const raw = await res.text();
+    let body = {};
+    try { body = JSON.parse(raw); } catch { /* reported below */ }
+    if (!res.ok) throw new Error(body?.error?.message || `HTTP ${res.status}: ${raw.slice(0, 160)}`);
+    const urls = [...(body.citations || []), ...(body.search_results || []).map((r) => r.url)].filter((u) => typeof u === "string");
+    return { answer: body.choices?.[0]?.message?.content || "", cited: [...new Set(urls)] };
+  } catch (e) {
+    throw new Error(`${cfg.label}: ${e.name === "AbortError" ? "timed out" : e.message}`);
+  } finally { clearTimeout(t); }
 }

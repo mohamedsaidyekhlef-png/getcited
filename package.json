@@ -1,6 +1,6 @@
 {
   "name": "getcited",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Unit tests for AI search. See who ChatGPT, Perplexity and Google AI Overviews cite instead of you, why, and how to take the citation: offline retrieve-then-cite arena, sentence X-ray, citation tests in CI, AI lie detector, GEO audit, MCP server.",
   "type": "module",
   "bin": {

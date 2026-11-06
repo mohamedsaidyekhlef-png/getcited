@@ -27,10 +27,15 @@ export function mockLlm() {
         const j = JSON.parse(body || "{}");
         calls.push({ path: req.url, headers: req.headers, body: j });
         res.setHeader("content-type", "application/json");
+        if (req.url.endsWith("/embeddings")) {
+          // Deterministic bag-of-words vectors: similar words, similar vectors.
+          const vec = (t) => { const v = new Array(64).fill(0); for (const w of String(t).toLowerCase().match(/[a-z0-9]+/g) || []) { let h = 0; for (const ch of w) h = (h * 31 + ch.charCodeAt(0)) >>> 0; v[h % 64] += 1; } return v; };
+          return res.end(JSON.stringify({ data: j.input.map((t, index) => ({ index, embedding: vec(t) })) }));
+        }
         if (req.url.endsWith("/chat/completions")) {
           if (req.headers.authorization !== "Bearer test-key") { res.statusCode = 401; return res.end(JSON.stringify({ error: { message: "bad key" } })); }
           const prompt = j.messages.at(-1).content;
-          return res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: reply(prompt) } }] }));
+          return res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: reply(prompt) } }], citations: ["https://www.settlewise.example/guide/", "https://unrelated.example/x"] }));
         }
         if (req.url.endsWith("/messages")) {
           if (req.headers["x-api-key"] !== "test-key") { res.statusCode = 401; return res.end(JSON.stringify({ error: { message: "bad key" } })); }

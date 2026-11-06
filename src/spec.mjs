@@ -19,7 +19,8 @@ export async function readSpec(path) {
 
 const asList = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
-function sourceOf(ref, dir, mine) {
+export function sourceOf(ref, dir, mine) {
+  if (ref && typeof ref === "object") return { url: ref.url, file: ref.file ? (isAbsolute(ref.file) ? ref.file : resolve(dir, ref.file)) : undefined, mine };
   const s = String(ref);
   if (/^https?:\/\//i.test(s)) return { url: s, mine };
   const file = isAbsolute(s) ? s : resolve(dir, s);
@@ -59,7 +60,7 @@ function check(exp, result) {
 
 const pct = (x) => `${Math.round(x * 100)}%`;
 
-export async function runSpec(spec, { llm, judge, onResult = () => {} } = {}) {
+export async function runSpec(spec, { llm, judge, embed, onResult = () => {} } = {}) {
   const dir = spec._dir || process.cwd();
   const cache = new Map();
   const load = (src) => {
@@ -73,7 +74,7 @@ export async function runSpec(spec, { llm, judge, onResult = () => {} } = {}) {
   if (spec.min_score != null && spec.site) {
     const r = /^https?:/i.test(spec.site) ? await audit(spec.site, { probeBots: spec.probe_bots !== false }) : await audit("", { file: resolve(dir, spec.site) });
     if (r.error) add({ name: `audit score ≥ ${spec.min_score}`, kind: "audit", status: "fail", detail: `couldn't load ${spec.site}: ${r.error}` });
-    else add({ name: `audit score ≥ ${spec.min_score}`, kind: "audit", status: r.score.overall >= spec.min_score ? "pass" : "fail", detail: `${r.score.overall}/100${r.priorities[0] ? `; top fix: ${r.priorities[0].title}` : ""}`, score: r.score.overall });
+    else add({ name: `audit score ≥ ${spec.min_score}`, kind: "audit", status: r.score.overall >= spec.min_score ? "pass" : "fail", detail: `${r.score.overall}/100${r.priorities[0] ? `; top fix: ${r.priorities[0].title}` : ""}`, score: r.score.overall, failing: [...r.site.checks, ...r.pages.flatMap((p) => p.checks)].filter((c) => c.status === "fail").map((c) => c.title) });
   }
 
   const questions = asList(spec.questions);
@@ -85,7 +86,7 @@ export async function runSpec(spec, { llm, judge, onResult = () => {} } = {}) {
     const rivals = asList((typeof q === "object" && q.competitors) || spec.competitors).map((c) => sourceOf(c, dir, false));
     const sources = [mine, ...rivals];
     const loaded = await Promise.all(sources.map(load));
-    const result = await arena(ask, sources, { k: (typeof q === "object" && q.k) || spec.k || 5, llm, samples: spec.samples || 3, loaded });
+    const result = await arena(ask, sources, { k: (typeof q === "object" && q.k) || spec.k || 5, llm, embed, samples: spec.samples || 3, loaded });
     results.push(result);
     const exps = asList((typeof q === "object" && q.expect) || "cited").map(parseExpect);
     for (const e of exps) add({ name: `${ask}  →  ${e.raw}`, kind: e.live ? "live" : "arena", question: ask, ...check(e, result), advice: result.gap?.advice?.[0] });

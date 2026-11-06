@@ -82,13 +82,13 @@ test("getcited.yml: block maps, lists, inline lists, quotes, comments; clear err
 
 test("getcited test: fails CI before the fix, passes after, writes a badge and a job summary", async () => {
   const dir = mkdtempSync(join(tmpdir(), "getcited-"));
-  const fail = await run("node", [bin, "test", fx("getcited.yml"), "--summary", join(dir, "sum.md")]).catch((e) => e);
+  const fail = await run("node", [bin, "test", fx("getcited.yml"), "--no-history", "--summary", join(dir, "sum.md")]).catch((e) => e);
   assert.equal(fail.code, 1);
   assert.match(fail.stdout, /4 failed/);
   assert.match(readFileSync(join(dir, "sum.md"), "utf8"), /citation test\(s\) failed/);
   const fixed = readFileSync(fx("getcited.yml"), "utf8").replace("site: mine.html", `site: ${fx("mine-fixed.html")}`).replace(/settlewise\.html|forum\.html/g, (m) => fx(m));
   writeFileSync(join(dir, "getcited.yml"), fixed);
-  const ok = await run("node", [bin, "test", join(dir, "getcited.yml"), "--badge", join(dir, "badge.json")]);
+  const ok = await run("node", [bin, "test", join(dir, "getcited.yml"), "--no-history", "--badge", join(dir, "badge.json")]);
   assert.match(ok.stdout, /all passed/);
   assert.deepEqual(JSON.parse(readFileSync(join(dir, "badge.json"), "utf8")), { schemaVersion: 1, label: "AI citation tests", message: "4/4 passing", color: "brightgreen" });
 });
@@ -156,4 +156,50 @@ test("init writes a starter getcited.yml from the page's own questions", async (
     assert.ok(spec.questions.some((q) => q.ask === "How long does a buyout take?"));
     assert.ok(badge({ passed: 0, failed: 0, questions: 0 }).message === "no tests");
   } finally { s.close(); }
+});
+
+test("regression monitoring: each run is saved and compared with the last, with reasons", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "getcited-"));
+  const hist = join(dir, "history");
+  const good = readFileSync(fx("getcited.yml"), "utf8").replace("site: mine.html", `site: ${fx("mine-fixed.html")}`).replace(/settlewise\.html|forum\.html/g, (m) => fx(m));
+  writeFileSync(join(dir, "getcited.yml"), good);
+  await run("node", [bin, "test", join(dir, "getcited.yml"), "--history", hist]);
+  // A redesign ships the marketing page instead: everything regresses.
+  writeFileSync(join(dir, "getcited.yml"), good.replace(fx("mine-fixed.html"), fx("mine.html")));
+  const r = await run("node", [bin, "test", join(dir, "getcited.yml"), "--history", hist, "--json", "-", "--fail-on-regression"]).catch((e) => e);
+  assert.equal(r.code, 1);
+  const out = JSON.parse(r.stdout);
+  assert.ok(out.diff.regressions >= 3, JSON.stringify(out.diff.changes));
+  assert.ok(out.diff.changes.some((c) => /dropped out of the context/.test(c.text)));
+  assert.ok(out.diff.changes.some((c) => /citation share 8\d% → 0%/.test(c.text)));
+  assert.ok(out.diff.changes.some((c) => /test now failing/.test(c.text)));
+});
+
+test("hybrid retrieval fuses embeddings into the ranking", async () => {
+  const m = await mockLlm();
+  try {
+    const embedCfg = resolveModel("openai:embed-model", { base: m.base, env: { OPENAI_API_KEY: "test-key" } });
+    const r = await arena(Q, [{ file: fx("mine-fixed.html"), url: "https://cashnow.example/", mine: true }, ...rivals], { embed: embedCfg });
+    assert.match(r.retrieval, /hybrid/);
+    assert.equal(r.gap.rank, 1);
+    assert.ok(m.calls.some((c) => c.path.endsWith("/embeddings") && c.body.input.length > 10));
+  } finally { m.close(); }
+});
+
+test("bench: scores arena predictions against a real engine's observed citations", async () => {
+  const m = await mockLlm();
+  try {
+    const { bench } = await import("../src/bench.mjs");
+    const observe = resolveModel("perplexity:sonar", { base: m.base, env: { PERPLEXITY_API_KEY: "test-key" } });
+    const spec = { _dir: fileURLToPath(new URL("./fixtures/arena/", import.meta.url)), questions: [
+      { ask: Q, pages: [{ url: "https://settlewise.example/guide", file: "settlewise.html" }, { url: "https://cashnow.example/", file: "mine.html" }, { url: "https://forum.example/t/1", file: "forum.html" }] },
+      { ask: "How long does a structured settlement buyout take?", observed: ["https://forum.example/t/1"], pages: [{ url: "https://settlewise.example/guide", file: "settlewise.html" }, { url: "https://forum.example/t/1", file: "forum.html" }] },
+    ] };
+    const b = await bench(spec, { observe });
+    assert.equal(b.scored, 2);
+    assert.equal(b.rows[0].top1Cited, true, "the engine cited settlewise, which the arena ranked first");
+    assert.equal(b.rows[1].top1Cited, false);
+    assert.equal(b.top1, 0.5);
+    assert.equal(b.rows[1].observed[0], "https://forum.example/t/1", "file observations skip the engine");
+  } finally { m.close(); }
 });

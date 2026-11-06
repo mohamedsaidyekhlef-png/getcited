@@ -15,7 +15,7 @@ import { get } from "./fetch.mjs";
 import { readHtml } from "./html.mjs";
 import { passages } from "./passages.mjs";
 import { bm25, hash, rng, termMap, terms } from "./text.mjs";
-import { complete } from "./llm.mjs";
+import { complete, cosine, embed } from "./llm.mjs";
 
 const INTENTS = [
   { re: /\b(how much|cost|costs|price|prices|pricing|fee|fees|cheap|expensive|afford)\b/i, add: "price cost per month plan fee", why: "pricing" },
@@ -80,6 +80,18 @@ export async function arena(question, sources, opts = {}) {
     ranked.forEach((x, r) => fused.set(x.p.key, (fused.get(x.p.key) || 0) + 1 / (60 + r + 1)));
     return { ...sq, winner: ranked[0] ? srcs[ranked[0].p.source].label : null };
   });
+  // Hybrid retrieval: add a dense (embedding) ranking per sub-query to the fusion.
+  let retrieval = "bm25";
+  if (opts.embed && all.length) {
+    const vecs = await embed(opts.embed, [...subs.map((s) => s.q), ...all.map((p) => `${p.heading}\n${p.text}`.slice(0, 2000))]);
+    const qv = vecs.slice(0, subs.length), pv = vecs.slice(subs.length);
+    qv.forEach((v) => {
+      all.map((p, i) => ({ p, s: cosine(v, pv[i]) }))
+        .sort((a, b) => b.s - a.s || a.p.key.localeCompare(b.p.key))
+        .forEach((x, r) => fused.set(x.p.key, (fused.get(x.p.key) || 0) + 1 / (60 + r + 1)));
+    });
+    retrieval = `hybrid (bm25 + ${opts.embed.label})`;
+  }
   const ranking = all
     .filter((p) => fused.has(p.key))
     .map((p) => ({ ...p, rrf: fused.get(p.key) }))
@@ -101,7 +113,7 @@ export async function arena(question, sources, opts = {}) {
   });
 
   const result = {
-    tool: "getcited", mode: "offline", question, k,
+    tool: "getcited", mode: "offline", retrieval, question, k,
     fanout: perQuery,
     standings: [...standings].sort((a, b) => b.share - a.share || (a.bestRank ?? 1e9) - (b.bestRank ?? 1e9)),
     context: context.map((p, r) => ({ rank: r + 1, source: srcs[p.source].label, mine: srcs[p.source].mine, ...pick(p) })),

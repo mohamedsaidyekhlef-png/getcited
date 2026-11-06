@@ -14,7 +14,9 @@ import { badge, readSpec, runSpec } from "../src/spec.mjs";
 import { truth } from "../src/truth.mjs";
 import { initSpec } from "../src/init.mjs";
 import { serveMcp } from "../src/mcp.mjs";
-import { arenaHtml, arenaMarkdown, arenaTerminal, testMarkdown, testTerminal, truthTerminal, xrayHtml, xrayTerminal } from "../src/views.mjs";
+import { diffRuns, previousRun, saveRun } from "../src/history.mjs";
+import { bench } from "../src/bench.mjs";
+import { arenaHtml, arenaMarkdown, arenaTerminal, benchTerminal, diffMarkdown, diffTerminal, testMarkdown, testTerminal, truthTerminal, xrayHtml, xrayTerminal } from "../src/views.mjs";
 
 const VERSION = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../package.json"), "utf8")).version;
 const HELP = `getcited ${VERSION}: unit tests for AI search. Find out who ChatGPT, Perplexity and
@@ -25,7 +27,11 @@ Commands
   getcited xray <url>                     sentence-by-sentence: what an AI would quote, what's dead weight
   getcited arena "<question>" <your-url> <competitor-url>...
                                           who gets cited for this question, and what your page is missing
-  getcited test [getcited.yml]            run your citation tests; exits 1 on failure (for CI)
+  getcited test [getcited.yml]            run your citation tests; exits 1 on failure (for CI).
+                                          Every run is saved and compared with the last: what regressed, and why
+  getcited diff <old.json> <new.json>     compare two saved runs
+  getcited bench <bench.yml> [--observe perplexity:sonar]
+                                          measure how well the arena predicts a real engine's citations
   getcited init <url> [--vs <url>...]     write a starter getcited.yml from your page
   getcited truth "<brand>" --fact "..."   what a model believes about you, checked against your facts
   getcited mcp                            run as an MCP server for Claude, Cursor, Codex, VS Code…
@@ -42,6 +48,9 @@ Arena / test / truth options
                    keys come from OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, ... (never stored)
   --base-url <u>   any OpenAI-compatible endpoint   --samples <n>   live answers per question (default 3)
   --judge <p:m>    separate model to fact-check truth claims
+  --embed <p:m>    hybrid retrieval: add embeddings (openai:text-embedding-3-small, ollama:nomic-embed-text…)
+  --history <dir>  where test runs are saved (default .getcited/history)   --no-history
+  --fail-on-regression   exit 1 when anything regressed since the last run
 
 Output (any command)
   --html <file>    visual report    --md <file>    Markdown    --json [file]   JSON (stdout if no file)
@@ -52,7 +61,7 @@ function die(msg, code = 1) { console.error(`getcited: ${msg}`); process.exit(co
 
 function parse(argv) {
   const a = { pages: 1, probeBots: true, quiet: false, pos: [], vs: [], facts: [] };
-  const COMMANDS = ["audit", "xray", "arena", "test", "init", "truth", "mcp"];
+  const COMMANDS = ["audit", "xray", "arena", "test", "init", "truth", "mcp", "diff", "bench"];
   if (COMMANDS.includes(argv[0])) a.cmd = argv.shift();
   else a.cmd = "audit";
   for (let i = 0; i < argv.length; i++) {
@@ -75,6 +84,11 @@ function parse(argv) {
       case "--k": a.k = Math.max(1, Math.min(20, parseInt(val(), 10) || 5)); break;
       case "--model": a.model = val(); break;
       case "--judge": a.judge = val(); break;
+      case "--embed": a.embed = val(); break;
+      case "--observe": a.observe = val(); break;
+      case "--history": a.history = val(); break;
+      case "--no-history": a.history = false; break;
+      case "--fail-on-regression": a.failOnRegression = true; break;
       case "--base-url": a.baseUrl = val(); break;
       case "--samples": a.samples = Math.max(1, Math.min(10, parseInt(val(), 10) || 3)); break;
       case "--vs": a.vs.push(val()); break;
@@ -140,7 +154,7 @@ switch (a.cmd) {
     const [question, ...refs] = a.pos;
     if (!question || (!refs.length && !a.file)) die('usage: getcited arena "<question>" <your-url> <competitor-url>...');
     const sources = [...(a.file ? [{ file: a.file, url: a.url || a.file, mine: true }] : []), ...refs.map((r, i) => asSource(r, !a.file && i === 0)), ...a.vs.map((r) => asSource(r, false))];
-    const r = await arena(question, sources, { k: a.k, llm: a.model ? model(a.model) : undefined, samples: a.samples });
+    const r = await arena(question, sources, { k: a.k, llm: a.model ? model(a.model) : undefined, embed: a.embed ? model(a.embed) : undefined, samples: a.samples });
     json(r);
     say(arenaTerminal(r, color));
     if (a.html) write(a.html, arenaHtml(r));
@@ -155,14 +169,44 @@ switch (a.cmd) {
     let spec;
     try { spec = await readSpec(path); } catch (e) { die(e.message); }
     const llm = a.model ? model(a.model) : spec.model && process.env.GETCITED_LIVE !== "0" ? model(spec.model) : undefined;
-    const run = await runSpec(spec, { llm, judge: a.judge ? model(a.judge) : undefined });
+    const run = await runSpec(spec, { llm, judge: a.judge ? model(a.judge) : undefined, embed: a.embed ? model(a.embed) : spec.embed ? model(spec.embed) : undefined });
+    const histDir = a.history === false ? null : a.history || spec.history || ".getcited/history";
+    const prev = histDir ? previousRun(histDir) : null;
+    if (histDir) run.savedTo = saveRun(histDir, run);
+    if (prev) run.diff = diffRuns(prev.run, (await import("../src/history.mjs")).snapshot(run));
     json(run);
     say(testTerminal(run, color));
-    if (a.md) write(a.md, testMarkdown(run));
-    if (a.summary) appendFileSync(a.summary, testMarkdown(run));
+    if (run.diff) say(diffTerminal(run.diff, color));
+    const md = testMarkdown(run) + (run.diff ? "\n" + diffMarkdown(run.diff) : "");
+    if (a.md) write(a.md, md);
+    if (a.summary) appendFileSync(a.summary, md);
     if (a.badge) write(a.badge, JSON.stringify(badge(run)));
     if (a.html) write(a.html, run.results.map((r) => arenaHtml(r)).join("\n"));
-    if (run.failed) process.exit(1);
+    if (run.failed || (a.failOnRegression && run.diff?.regressions)) process.exit(1);
+    break;
+  }
+  case "diff": {
+    const [oldF, newF] = a.pos;
+    if (!oldF || !newF) die("usage: getcited diff <old-run.json> <new-run.json>  (runs are saved in .getcited/history)");
+    const load = (f) => { const j = JSON.parse(readFileSync(f, "utf8")); return j.kind === "run" ? j : null; };
+    const o = load(oldF), n = load(newF);
+    if (!o || !n) die("both files must be runs saved by getcited test");
+    const d = diffRuns(o, n);
+    json(d);
+    say("\n" + diffTerminal(d, color));
+    if (a.md) write(a.md, diffMarkdown(d));
+    if (a.failOnRegression && d.regressions) process.exit(1);
+    break;
+  }
+  case "bench": {
+    const path = a.pos[0];
+    if (!path) die("usage: getcited bench <bench.yml> [--observe perplexity:sonar] [--embed provider:model]");
+    let spec;
+    try { spec = await readSpec(path).catch(async () => ({ ...(await import("../src/yaml.mjs")).parseYaml(readFileSync(path, "utf8")) })); } catch (e) { die(e.message); }
+    const b = await bench(spec, { observe: a.observe ? model(a.observe) : undefined, embed: a.embed ? model(a.embed) : undefined });
+    json(b);
+    say(benchTerminal(b, color));
+    if (a.md) write(a.md, `# getcited bench\n\nTop-1 accuracy ${b.top1 ?? "–"} (baseline ${b.baselineTop1 ?? "–"}), precision@n ${b.precisionAtN ?? "–"} over ${b.scored} questions vs ${b.engine}.\n`);
     break;
   }
   case "init": {
