@@ -1,7 +1,7 @@
 {
   "tool": "getcited",
   "version": "1.0.0",
-  "auditedAt": "2026-11-06T19:43:00.593Z",
+  "auditedAt": "2026-11-06T19:44:26.312Z",
   "url": "https://www.surplusclock.com/",
   "site": {
     "checks": [
@@ -242,7 +242,7 @@
     {
       "url": "https://www.surplusclock.com/",
       "title": "Surplus Clock · Know Which Surplus Cases Died, the Day They Die",
-      "ms": 183,
+      "ms": 541,
       "score": {
         "overall": 82,
         "grade": "B",
@@ -281,7 +281,7 @@
           "weight": 4,
           "why": "Crawlers fetch pages live while answering; slow pages get dropped.",
           "status": "pass",
-          "evidence": "HTML in 183 ms.",
+          "evidence": "HTML in 541 ms.",
           "fix": ""
         },
         {
@@ -535,7 +535,7 @@
     {
       "url": "https://www.surplusclock.com/",
       "title": "Surplus Clock · Know Which Surplus Cases Died, the Day They Die",
-      "ms": 102,
+      "ms": 87,
       "score": {
         "overall": 82,
         "grade": "B",
@@ -574,7 +574,7 @@
           "weight": 4,
           "why": "Crawlers fetch pages live while answering; slow pages get dropped.",
           "status": "pass",
-          "evidence": "HTML in 102 ms.",
+          "evidence": "HTML in 87 ms.",
           "fix": ""
         },
         {
@@ -828,7 +828,7 @@
     {
       "url": "https://www.surplusclock.com/method",
       "title": "Method · Surplus Clock",
-      "ms": 109,
+      "ms": 220,
       "score": {
         "overall": 79,
         "grade": "B",
@@ -867,7 +867,7 @@
           "weight": 4,
           "why": "Crawlers fetch pages live while answering; slow pages get dropped.",
           "status": "pass",
-          "evidence": "HTML in 109 ms.",
+          "evidence": "HTML in 220 ms.",
           "fix": ""
         },
         {

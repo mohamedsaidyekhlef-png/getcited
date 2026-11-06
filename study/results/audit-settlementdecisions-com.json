@@ -1,7 +1,7 @@
 {
   "tool": "getcited",
   "version": "1.0.0",
-  "auditedAt": "2026-11-06T19:42:59.232Z",
+  "auditedAt": "2026-11-06T19:44:25.195Z",
   "url": "https://www.settlementdecisions.com/",
   "site": {
     "checks": [
@@ -231,7 +231,7 @@
     {
       "url": "https://www.settlementdecisions.com/",
       "title": "SettlementDecisions.com — Expert Structured Settlement Guidance",
-      "ms": 523,
+      "ms": 668,
       "score": {
         "overall": 89,
         "grade": "B",
@@ -270,7 +270,7 @@
           "weight": 4,
           "why": "Crawlers fetch pages live while answering; slow pages get dropped.",
           "status": "pass",
-          "evidence": "HTML in 523 ms.",
+          "evidence": "HTML in 668 ms.",
           "fix": ""
         },
         {
@@ -513,7 +513,7 @@
     {
       "url": "https://www.settlementdecisions.com/sell",
       "title": "Compare Structured Settlement Offers | 3-5 Competing Quotes Free",
-      "ms": 155,
+      "ms": 77,
       "score": {
         "overall": 88,
         "grade": "B",
@@ -552,7 +552,7 @@
           "weight": 4,
           "why": "Crawlers fetch pages live while answering; slow pages get dropped.",
           "status": "pass",
-          "evidence": "HTML in 155 ms.",
+          "evidence": "HTML in 77 ms.",
           "fix": ""
         },
         {
@@ -795,7 +795,7 @@
     {
       "url": "https://www.settlementdecisions.com/blog",
       "title": "Expert Insights & Guides | SettlementDecisions.com Blog",
-      "ms": 92,
+      "ms": 252,
       "score": {
         "overall": 86,
         "grade": "B",
@@ -834,7 +834,7 @@
           "weight": 4,
           "why": "Crawlers fetch pages live while answering; slow pages get dropped.",
           "status": "pass",
-          "evidence": "HTML in 92 ms.",
+          "evidence": "HTML in 252 ms.",
           "fix": ""
         },
         {
