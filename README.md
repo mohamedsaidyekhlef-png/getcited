@@ -37,6 +37,18 @@ Rewrite one page with that advice, run it again:
 
 **0% → 80% citation share, from one rewrite.** That's the loop getcited gives you, for every question your customers ask.
 
+## On the real web
+
+We ran getcited on **5 real questions and the 27 pages that rank for them**, including our own sites. [Read the study →](study/README.md)
+
+<img src="docs/study-findings.png" alt="getcited on the real web: a focused page takes 100% citation share while Bankrate ranks #36; 2 of 22 ranking pages turn AI crawlers away at the firewall, including Wikipedia refusing ClaudeBot; the median ranking page has only 20% quotable sentences." width="100%">
+
+- **Passages win, brands don't.** One focused page took 100% of the context for a money question. Bankrate's best passage came in at #36.
+- **The firewall beats robots.txt.** The #1 page for *"Should I block GPTBot?"* returns 403 to GPTBot, ClaudeBot and PerplexityBot. Wikipedia's GEO article refused ClaudeBot.
+- **Ranking pages are mostly unquotable.** On the median page, only 20% of sentences are quotable.
+
+Every raw result is in [`study/results/`](study/results/), and the [workflow](.github/workflows/study.yml) re-runs the study on push.
+
 ## How it works
 
 AI answer engines don't rank pages. They run **retrieve-then-cite**:
