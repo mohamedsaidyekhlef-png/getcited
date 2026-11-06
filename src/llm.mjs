@@ -10,6 +10,7 @@ const PRESETS = {
   gemini: { base: "https://generativelanguage.googleapis.com/v1beta/openai", key: "GEMINI_API_KEY", wire: "openai" },
   mistral: { base: "https://api.mistral.ai/v1", key: "MISTRAL_API_KEY", wire: "openai" },
   deepseek: { base: "https://api.deepseek.com/v1", key: "DEEPSEEK_API_KEY", wire: "openai" },
+  github: { base: "https://models.github.ai/inference", key: "GITHUB_TOKEN", wire: "openai" }, // free GitHub Models, e.g. github:openai/gpt-4.1-mini
   ollama: { base: "http://localhost:11434/v1", key: null, wire: "openai" },
   lmstudio: { base: "http://localhost:1234/v1", key: null, wire: "openai" },
   anthropic: { base: "https://api.anthropic.com/v1", key: "ANTHROPIC_API_KEY", wire: "anthropic" },

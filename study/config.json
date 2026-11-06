@@ -1,0 +1,63 @@
+{
+  "model": "github:openai/gpt-4.1-mini",
+  "samples": 3,
+  "questions": [
+    {
+      "ask": "How much does it cost to sell a structured settlement?",
+      "mine": "https://settlementdecisions.com/",
+      "pages": [
+        "https://www.bankrate.com/personal-finance/debt/how-to-cash-out-a-structured-settlement/",
+        "https://peachtreefinancial.com/how-much-does-it-cost-to-sell-a-structured-settlement",
+        "https://www.retirementliving.com/how-to-sell-structured-settlement",
+        "https://www.consumeraffairs.com/finance/structured-settlement.html",
+        "https://www.catalinastructuredfunding.com/structured-settlements/buyout"
+      ]
+    },
+    {
+      "ask": "What happens to surplus funds after a tax deed sale in Florida?",
+      "mine": "https://surplusclock.com/",
+      "pages": [
+        "https://www.sarasotaclerk.com/Home-and-Property/Tax-Deeds/Surplus-Funds-from-Tax-Deed-Sale",
+        "https://m.flsenate.gov/statutes/197.582",
+        "https://pascoclerk.com/839/Tax-Deed-Surplus",
+        "https://barneswalker.com/legal-glossary/t/tax-deed-sale-surplus-funds-florida/",
+        "https://propertyonion.com/education/?p=2291"
+      ]
+    },
+    {
+      "ask": "What is generative engine optimization?",
+      "pages": [
+        "https://en.wikipedia.org/wiki/Generative_engine_optimization",
+        "https://www.conductor.com/academy/generative-engine-optimization/",
+        "https://www.precis.com/glossary/generative-engine-optimisation-geo",
+        "https://onesignal.com/glossary/generative-engine-optimization-geo",
+        "https://www.arcintermedia.com/knowledge-base/ai-marketing-and-processes/generative-engine-optimization-definition/"
+      ]
+    },
+    {
+      "ask": "What is llms.txt?",
+      "pages": [
+        "https://llmstxt.org/",
+        "https://www.mintlify.com/blog/what-is-llms-txt",
+        "https://www.mailmodo.com/guides/llms-txt/",
+        "https://cloro.dev/blog/llms-txt/",
+        "https://www.joinmassive.com/glossary/what-is-llms-txt"
+      ]
+    },
+    {
+      "ask": "Should I block GPTBot in robots.txt?",
+      "pages": [
+        "https://platform.openai.com/docs/bots",
+        "https://www.1digitalagency.com/glossary/gptbot/",
+        "https://wpghost.com/block-gptbot-wordpress/",
+        "https://www.pepper.inc/blog/oai-searchbot/",
+        "https://www.anglera.com/glossary/gptbot"
+      ]
+    }
+  ],
+  "audits": ["https://settlementdecisions.com/", "https://surplusclock.com/", "https://authorspack.com/"],
+  "truth": [
+    { "brand": "SettlementDecisions", "site": "settlementdecisions.com", "facts": ["SettlementDecisions.com is a structured settlement website that connects people selling structured settlement payments with buyers (lead generation)"] },
+    { "brand": "Surplus Clock", "site": "surplusclock.com", "facts": ["Surplus Clock is a research service for Florida tax deed surplus funds", "Its customers are surplus recovery firms, attorneys and lienholders"] }
+  ]
+}

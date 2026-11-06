@@ -1,0 +1,26 @@
+name: study
+# Runs the real-world study on live sites and commits the results to this branch.
+on:
+  push:
+    branches: [study]
+    paths: [study/config.json, study/run.mjs, .github/workflows/study.yml]
+permissions:
+  contents: write
+  models: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node study/run.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          git config user.name "Mohamed Said Yekhlef"
+          git config user.email "mohamedsaidyekhlef@gmail.com"
+          git add study/results
+          git commit -m "Study results $(date -u +%F)" || exit 0
+          git push
