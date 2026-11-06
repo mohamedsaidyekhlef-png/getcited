@@ -51,13 +51,15 @@ We ran getcited on **5 real questions and the 27 pages that rank for them**, inc
 
 Every raw result is in [`study/results/`](study/results/), and the [workflow](.github/workflows/study.yml) re-runs the study on push.
 
-## Watch: the six pillars in 88 seconds
+## Watch: the six pillars
 
-<a href="docs/video/getcited-explained.mp4"><img src="docs/video/poster-explained.jpg" alt="Play the getcited explainer: Citation Arena, X-ray, tests in CI, regression monitoring, truth and audit" width="100%"></a>
+| | |
+|---|---|
+| <img src="docs/video/gif/getcited-arena.gif" alt="Citation Arena: who AI cites instead of you, and why" width="100%"><br>**01 · Citation Arena** | <img src="docs/video/gif/getcited-xray.gif" alt="Citation X-ray: which sentences AI would quote" width="100%"><br>**02 · Citation X-ray** |
+| <img src="docs/video/gif/getcited-tests.gif" alt="Citation tests in CI: the PR fails when a change costs a citation" width="100%"><br>**03 · Tests in CI** | <img src="docs/video/gif/getcited-regress.gif" alt="Regression monitoring: what changed since the last run, and why" width="100%"><br>**04 · Regression monitoring** |
+| <img src="docs/video/gif/getcited-truth.gif" alt="Truth: what AI gets wrong about your brand" width="100%"><br>**05 · Truth** | <img src="docs/video/gif/getcited-audit.gif" alt="Audit: robots.txt says allowed, the firewall says 403" width="100%"><br>**06 · Audit** |
 
-| Arena | X-ray | Tests in CI | Regressions | Truth | Audit |
-|---|---|---|---|---|---|
-| [▶ 15s](docs/video/getcited-arena.mp4) | [▶ 14s](docs/video/getcited-xray.mp4) | [▶ 15s](docs/video/getcited-tests.mp4) | [▶ 15s](docs/video/getcited-regress.mp4) | [▶ 14s](docs/video/getcited-truth.mp4) | [▶ 15s](docs/video/getcited-audit.mp4) |
+[Full 88-second film (MP4)](docs/video/getcited-explained.mp4) · [scairos.com/getcited](https://www.scairos.com/getcited)
 
 The videos are code too: [`docs/video/film.html`](docs/video/film.html) draws every frame, and [`render.mjs`](docs/video/render.mjs) renders them to MP4.
 
