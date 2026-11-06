@@ -16,25 +16,8 @@ const out = new URL("./results/", import.meta.url);
 mkdirSync(out, { recursive: true });
 const save = (name, data) => writeFileSync(new URL(name, out), typeof data === "string" ? data : JSON.stringify(data, null, 2));
 let llm = null;
-try { llm = resolveModel(cfg.model); } catch (e) { console.log("no live model:", e.message); }
+if (cfg.model) { try { llm = resolveModel(cfg.model); } catch (e) { console.log("no live model:", e.message); } }
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
-if (llm) {
-  // Raw calls, saved as-is, so the live results can be checked by hand.
-  const variants = [
-    { url: `${llm.base}/chat/completions`, model: llm.model, headers: {} },
-    { url: `${llm.base}/chat/completions`, model: llm.model, headers: { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" } },
-    { url: "https://models.github.ai/inference/chat/completions", model: "openai/gpt-4o-mini", headers: { accept: "application/json" } },
-    { url: "https://models.inference.ai.azure.com/chat/completions", model: "gpt-4o-mini", headers: {} },
-  ];
-  const probes = [];
-  for (const v of variants) {
-    try {
-      const r = await fetch(v.url, { method: "POST", redirect: "manual", headers: { "content-type": "application/json", authorization: `Bearer ${llm.key}`, ...v.headers }, body: JSON.stringify({ model: v.model, messages: [{ role: "user", content: "Reply with the single word: ready" }] }) });
-      probes.push({ url: v.url, model: v.model, headers: v.headers, status: r.status, location: r.headers.get("location"), type: r.headers.get("content-type"), body: (await r.text()).slice(0, 600) });
-    } catch (e) { probes.push({ url: v.url, error: e.message }); }
-  }
-  save("llm-probe.json", probes);
-}
 const summary = { ranAt: new Date().toISOString(), runner: process.env.RUNNER_OS || "local", model: llm?.label || null, questions: [], audits: [], xrays: [], truth: [], probe: [] };
 
 for (const q of cfg.questions) {

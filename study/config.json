@@ -1,5 +1,4 @@
 {
-  "model": "github:openai/gpt-4.1-mini",
   "samples": 3,
   "questions": [
     {
@@ -55,9 +54,8 @@
       ]
     }
   ],
-  "audits": ["https://settlementdecisions.com/", "https://surplusclock.com/", "https://authorspack.com/"],
-  "truth": [
-    { "brand": "SettlementDecisions", "site": "settlementdecisions.com", "facts": ["SettlementDecisions.com is a structured settlement website that connects people selling structured settlement payments with buyers (lead generation)"] },
-    { "brand": "Surplus Clock", "site": "surplusclock.com", "facts": ["Surplus Clock is a research service for Florida tax deed surplus funds", "Its customers are surplus recovery firms, attorneys and lienholders"] }
+  "audits": [
+    "https://settlementdecisions.com/",
+    "https://surplusclock.com/"
   ]
 }
