@@ -11,8 +11,10 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 
 /** Plain text (blank lines between paragraphs, "- " for list items) to HTML. */
 export function passageHtml(heading, text) {
-  const blocks = String(text || "").trim().split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  const blocks = String(text || "").trim().replace(/^(#{2,4})\s+(.+)$/gm, "\n$1 $2\n").split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
   const html = blocks.map((b) => {
+    const h = /^#{2,4}\s+(.+)$/.exec(b);
+    if (h) return `<h3>${esc(h[1])}</h3>`;
     const lines = b.split("\n").map((l) => l.trim());
     if (lines.every((l) => /^[-*•]\s+/.test(l))) return `<ul>${lines.map((l) => `<li>${esc(l.replace(/^[-*•]\s+/, ""))}</li>`).join("")}</ul>`;
     return `<p>${esc(lines.join(" "))}</p>`;
@@ -37,7 +39,7 @@ export async function simulate({ question, mine, competitors = [], passage, head
   const before = await arena(question, sources, { k, loaded });
   const edited = { ...loaded[0], body: inject(loaded[0].body, passageHtml(heading ?? question, passage)) };
   const after = await arena(question, sources, { k, loaded: [edited, ...loaded.slice(1)] });
-  const prose = passage.split("\n").map((l) => (/^\s*[-*•]\s+/.test(l) ? l.replace(/^\s*[-*•]\s+/, "").replace(/([^.!?])\s*$/, "$1.") : l)).join("\n");
+  const prose = passage.split("\n").filter((l) => !/^#{2,4}\s/.test(l)).map((l) => (/^\s*[-*•]\s+/.test(l) ? l.replace(/^\s*[-*•]\s+/, "").replace(/([^.!?])\s*$/, "$1.") : l)).join("\n");
   const scored = sentences(prose).map((t) => ({ text: t, ...scoreSentence(t) }));
   return { question, mine, heading: heading ?? question, passage, before, after, sentences: scored };
 }

@@ -162,7 +162,7 @@ export function simulateCard(r) {
     after: { share: meA?.share || 0, rank: meA?.bestRank ?? null, leader: a.standings[0]?.label, won: Boolean(a.gap?.won), leads: Boolean(meA && a.standings[0]?.mine) },
     standings: rows,
     context: a.context.slice(0, 3),
-    advice: a.gap?.advice || [],
+    advice: [...(a.gap?.advice || []), ...(!a.gap?.won && a.context.length && a.context.every((p) => !p.mine) ? [`The winning passages are short sections under headings that carry the question's words (e.g. “${one(a.context[0].heading, 80)}”). Split the passage into 2–4 sub-sections with "### " headings, 30–80 words each.`] : [])],
     sentences: r.sentences.map((s) => ({ text: one(s.text, 240), score: s.score, verdict: s.verdict, why: s.verdict === "quotable" ? s.plus : s.minus })),
   };
 }
@@ -171,7 +171,7 @@ export function simulateMarkdown(c) {
   const L = [];
   const d = Math.round((c.after.share - c.before.share) * 100);
   L.push(`**getcited simulation · “${c.question}”**`);
-  L.push(c.after.won && c.after.leads ? `**This passage takes the citation: ${pct(c.before.share)} → ${pct(c.after.share)}.** It becomes the #1 passage an engine would read, and your page leads.` : c.after.won ? `**This passage becomes the #1 passage an engine would read** (share ${pct(c.before.share)} → ${pct(c.after.share)}); ${c.after.leader} still holds slightly more of the answer.` : d > 0 ? `**Citation share rises ${pct(c.before.share)} → ${pct(c.after.share)}**, best passage #${c.before.rank ?? "–"} → #${c.after.rank ?? "–"}. ${c.after.leader} still leads.` : `**No gain: ${pct(c.before.share)} → ${pct(c.after.share)}.** ${c.after.leader} keeps the answer; the passage needs the question's words and specific facts.`);
+  L.push(c.after.won && c.after.leads ? `**This passage takes the citation: ${pct(c.before.share)} → ${pct(c.after.share)}.** It becomes the #1 passage an engine would read, and your page leads.` : c.after.won ? `**This passage becomes the #1 passage an engine would read** (share ${pct(c.before.share)} → ${pct(c.after.share)}); ${c.after.leader} still holds slightly more of the answer.` : d > 0 ? `**Citation share rises ${pct(c.before.share)} → ${pct(c.after.share)}**, best passage #${c.before.rank ?? "–"} → #${c.after.rank ?? "–"}. ${c.after.leader} still leads.` : c.after.rank && (!c.before.rank || c.after.rank < c.before.rank) ? `**Closer, not in yet: your best passage moves #${c.before.rank ?? "–"} → #${c.after.rank}.** Engines read about the top 5 passages; ${c.after.leader} still holds them.` : `**No gain: ${pct(c.before.share)} → ${pct(c.after.share)}.** ${c.after.leader} keeps the answer; the passage needs the question's words and specific facts.`);
   L.push(`Tested ${utc(c.measuredAt)} against the live pages; the passage was placed at the top of ${short(c.url)}'s main content. Nothing was published.`);
   L.push("", "| Source | Before | After |", "|---|---:|---:|");
   for (const s of c.standings) L.push(`| ${s.mine ? `**${s.label}** (you)` : s.label} | ${pct(s.before)} | ${pct(s.after)} |`);

@@ -205,7 +205,7 @@ function arena(d){
 
 function simulate(d){
   var b=Math.round(d.before.share*100),a=Math.round(d.after.share*100),delta=a-b;
-  var verdict=d.after.won&&d.after.leads?"This passage takes the citation":d.after.won?"Your passage becomes the #1 passage":delta>0?"Share rises, "+d.after.leader+" still leads":"No gain yet";
+  var verdict=d.after.won&&d.after.leads?"This passage takes the citation":d.after.won?"Your passage becomes the #1 passage":d.after.rank&&(!d.before.rank||d.after.rank<d.before.rank)&&delta<=0?"Closer: #"+(d.before.rank||"–")+" → #"+d.after.rank+", not in the answer yet":delta>0?"Share rises, "+d.after.leader+" still leads":"No gain yet";
   var h=header(d,"“"+d.question+"”");
   h+='<div class="kpis">'+gauge(a,a+"%","after")+'<div style="min-width:0"><div class="verdict">'+esc(verdict)+'</div><div class="meta num">Citation share '+b+'% → <b style="color:var(--'+(delta>0?"pass":"fail")+')">'+a+'%</b> · best passage #'+(d.before.rank||"–")+' → #'+(d.after.rank||"–")+' · nothing published</div><div style="margin-top:10px">'+
   d.standings.map(function(s){return '<div class="share"><span class="n'+(s.mine?" me":"")+'" title="'+esc(s.url)+'">'+esc(s.label)+(s.mine?" · you":"")+'</span><span class="sbar" style="display:block"><span class="sbar"><span class="track"><i style="width:'+Math.max(2,Math.round(s.before*100))+'%;background:var(--line2)"></i></span><b class="num dim">'+pct(s.before)+'</b></span><span class="sbar" style="margin-top:3px"><span class="track"><i style="width:'+Math.max(2,Math.round(s.after*100))+'%;background:'+(s.mine?"var(--brand)":"var(--mute)")+'"></i></span><b class="num">'+pct(s.after)+'</b></span></span></div>'}).join("")+
