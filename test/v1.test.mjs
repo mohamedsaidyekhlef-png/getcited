@@ -137,7 +137,7 @@ test("MCP server: initialize, list tools, call the X-ray", async () => {
     assert.equal((await next()).result.serverInfo.name, "getcited");
     send({ method: "notifications/initialized" });
     send({ id: 2, method: "tools/list" });
-    assert.deepEqual((await next()).result.tools.map((t) => t.name), ["getcited_audit", "getcited_xray", "getcited_arena", "getcited_truth"]);
+    assert.deepEqual((await next()).result.tools.map((t) => t.name), ["getcited_audit", "getcited_xray", "getcited_arena", "getcited_simulate", "getcited_fixkit", "getcited_truth"]);
     send({ id: 3, method: "tools/call", params: { name: "getcited_xray", arguments: { url: s.url } } });
     const out = await next();
     assert.equal(out.result.isError, false);
@@ -239,4 +239,24 @@ test("hosted mode: private addresses and redirects into them are refused; truth 
     assert.equal(call.result.isError, true);
     assert.equal(await handleRpc({ jsonrpc: "2.0", method: "notifications/initialized" }), null);
   } finally { setUrlGuard(null); s.close(); }
+});
+
+test("simulate: a passage that answers the question takes the citation, and the fix kit is built from the page", async () => {
+  const { simulate } = await import("../src/simulate.mjs");
+  const { present } = await import("../src/mcp.mjs");
+  const s = await serve("arena");
+  try {
+    const q = "How much does a structured settlement buyout cost?";
+    const passage = "A structured settlement buyout costs the gap between what your payments are worth and the lump sum you receive. Buyers apply a discount rate of 9% to 18% a year, and a judge must approve every sale.\n\nOn $100,000 paid over 10 years, a 12% discount rate returns about $56,500 today, while a 9% rate returns about $64,200.";
+    const r = await simulate({ question: q, mine: s.url + "/mine.html", competitors: [s.url + "/settlewise.html", s.url + "/forum.html"], passage });
+    const me = (a) => a.standings.find((x) => x.mine).share;
+    assert.ok(me(r.after) > me(r.before), `share should rise: ${me(r.before)} -> ${me(r.after)}`);
+    assert.ok(r.sentences.some((x) => x.verdict === "quotable"));
+    const p = await present("getcited_simulate", { question: q, mine: s.url + "/mine.html", competitors: [s.url + "/settlewise.html"], passage });
+    assert.equal(p.data.kind, "simulate");
+    assert.match(p.text, /Before \| After/);
+    const fk = await present("getcited_fixkit", { url: s.url + "/mine.html" });
+    assert.equal(fk.data.kind, "fixkit");
+    assert.ok(fk.data.files.some((f) => f.file === "schema.jsonld.html"));
+  } finally { s.close(); }
 });

@@ -145,3 +145,52 @@ export function arenaMarkdown(c) {
   L.push("", `Method: passage chunking, query fan-out and BM25 with reciprocal rank fusion, the retrieve-then-cite pipeline answer engines use. It ranks passages on these pages; it does not query a live engine's index. [Details](${METHOD}).`);
   return L.join("\n");
 }
+
+export function simulateCard(r) {
+  const card = (a) => arenaCard(a);
+  const b = card(r.before), a = card(r.after);
+  const meB = b.standings.find((s) => s.mine), meA = a.standings.find((s) => s.mine);
+  const rows = a.standings.map((s) => ({ label: s.label, url: s.url, mine: s.mine, after: s.share, before: (b.standings.find((x) => x.url === s.url) || {}).share || 0, bestRank: s.bestRank }));
+  return {
+    kind: "simulate",
+    question: r.question,
+    url: r.mine,
+    measuredAt: new Date().toISOString(),
+    heading: r.heading,
+    passage: r.passage,
+    before: { share: meB?.share || 0, rank: meB?.bestRank ?? null, leader: b.standings[0]?.label },
+    after: { share: meA?.share || 0, rank: meA?.bestRank ?? null, leader: a.standings[0]?.label, won: Boolean(a.gap?.won), leads: Boolean(meA && a.standings[0]?.mine) },
+    standings: rows,
+    context: a.context.slice(0, 3),
+    advice: a.gap?.advice || [],
+    sentences: r.sentences.map((s) => ({ text: one(s.text, 240), score: s.score, verdict: s.verdict, why: s.verdict === "quotable" ? s.plus : s.minus })),
+  };
+}
+
+export function simulateMarkdown(c) {
+  const L = [];
+  const d = Math.round((c.after.share - c.before.share) * 100);
+  L.push(`**getcited simulation · “${c.question}”**`);
+  L.push(c.after.won && c.after.leads ? `**This passage takes the citation: ${pct(c.before.share)} → ${pct(c.after.share)}.** It becomes the #1 passage an engine would read, and your page leads.` : c.after.won ? `**This passage becomes the #1 passage an engine would read** (share ${pct(c.before.share)} → ${pct(c.after.share)}); ${c.after.leader} still holds slightly more of the answer.` : d > 0 ? `**Citation share rises ${pct(c.before.share)} → ${pct(c.after.share)}**, best passage #${c.before.rank ?? "–"} → #${c.after.rank ?? "–"}. ${c.after.leader} still leads.` : `**No gain: ${pct(c.before.share)} → ${pct(c.after.share)}.** ${c.after.leader} keeps the answer; the passage needs the question's words and specific facts.`);
+  L.push(`Tested ${utc(c.measuredAt)} against the live pages; the passage was placed at the top of ${short(c.url)}'s main content. Nothing was published.`);
+  L.push("", "| Source | Before | After |", "|---|---:|---:|");
+  for (const s of c.standings) L.push(`| ${s.mine ? `**${s.label}** (you)` : s.label} | ${pct(s.before)} | ${pct(s.after)} |`);
+  L.push("", "| Sentence in your passage | Score | Verdict |", "|---|---:|---|");
+  for (const s of c.sentences) L.push(`| “${cell(one(s.text, 110))}” | ${s.score} | ${s.verdict}${s.why?.length ? `: ${cell(s.why.join(", "))}` : ""} |`);
+  if (!c.after.won && c.advice.length) { L.push("", "**To close the gap**"); c.advice.forEach((a, i) => L.push(`${i + 1}. ${a}`)); }
+  L.push("", "Next: revise the passage and simulate again until it wins, then publish it exactly as tested.");
+  return L.join("\n");
+}
+
+export function fixkitCard(url, files, measuredAt) {
+  return { kind: "fixkit", url, measuredAt: measuredAt || new Date().toISOString(), files: files.map((f) => ({ file: f.file, note: f.note, content: f.content.slice(0, 12000), todos: (f.content.match(/TODO/g) || []).length })) };
+}
+
+export function fixkitMarkdown(c) {
+  const L = [`**getcited fix kit · ${short(c.url)}**`, `${c.files.length} files generated ${utc(c.measuredAt)} from what is on the page now. Values getcited could not verify are marked TODO; fill them with real facts before publishing.`];
+  for (const f of c.files) {
+    L.push("", `**${f.file}** · ${f.note}${f.todos ? ` (${f.todos} TODO)` : ""}`);
+    L.push("```" + (/\.html$/.test(f.file) ? "html" : /\.md$/.test(f.file) ? "markdown" : "text"), f.content.trim(), "```");
+  }
+  return L.join("\n");
+}

@@ -71,8 +71,8 @@ function when(iso){try{return new Date(iso).toLocaleTimeString([],{hour:"2-digit
 function host(u){try{return new URL(u).host.replace(/^www\./,"")}catch(e){return u}}
 function shortUrl(u){try{var x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname).replace(/\/+$/,"")}catch(e){return u}}
 var WORD={pass:"Pass",warn:"Warning",fail:"Fail",info:"Note"};
-var TOOL={audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena"};
-var LABEL={audit:"Audit",xray:"X-ray",arena:"Citation Arena"};
+var TOOL={audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",fixkit:"getcited_fixkit"};
+var LABEL={audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",fixkit:"Fix kit"};
 
 // Host bridge: MCP Apps (Claude, VS Code…) and the ChatGPT Apps SDK.
 var nextId=1,pending={};
@@ -83,8 +83,8 @@ var oa=function(){return window.openai||null};
 function openLink(url){if(oa()&&oa().openExternal){try{oa().openExternal({href:url});return}catch(e){}}request("ui/open-link",{url:url}).catch(function(){window.open(url,"_blank","noopener")})}
 function ask(text){if(oa()&&oa().sendFollowUpMessage){oa().sendFollowUpMessage({prompt:text});toast("Sent to the chat");return}request("ui/message",{role:"user",content:[{type:"text",text:text}]}).then(function(){toast("Sent to the chat")}).catch(function(){copy(text,"Prompt copied: paste it in the chat")})}
 function rerun(){
-  var d=state.data;if(!d)return;var name=TOOL[d.kind];var args=state.input||(d.kind==="arena"?null:{url:d.url});
-  if(!args){state.form=true;render(d);return}
+  var d=state.data;if(!d)return;var name=TOOL[d.kind];var args=state.input||(d.kind==="arena"||d.kind==="simulate"?null:{url:d.url});
+  if(!args){if(d.kind==="simulate"){toast("Ask in the chat to test a revised passage");return}state.form=true;render(d);return}
   root.querySelector(".kpis,.pane")&&(root.querySelector(".pane").style.opacity=".5");toast("Re-running live…");
   var p=oa()&&oa().callTool?oa().callTool(name,args):request("tools/call",{name:name,arguments:args},120000);
   Promise.resolve(p).then(function(r){var sc=r&&(r.structuredContent||r);if(sc&&sc.kind)render(sc);else throw 0}).catch(function(){var a=root.querySelector(".pane");if(a)a.style.opacity="";toast("This app can't run tools here. Ask in the chat instead.")});
@@ -203,11 +203,42 @@ function arena(d){
   return h;
 }
 
+function simulate(d){
+  var b=Math.round(d.before.share*100),a=Math.round(d.after.share*100),delta=a-b;
+  var verdict=d.after.won&&d.after.leads?"This passage takes the citation":d.after.won?"Your passage becomes the #1 passage":delta>0?"Share rises, "+d.after.leader+" still leads":"No gain yet";
+  var h=header(d,"“"+d.question+"”");
+  h+='<div class="kpis">'+gauge(a,a+"%","after")+'<div style="min-width:0"><div class="verdict">'+esc(verdict)+'</div><div class="meta num">Citation share '+b+'% → <b style="color:var(--'+(delta>0?"pass":"fail")+')">'+a+'%</b> · best passage #'+(d.before.rank||"–")+' → #'+(d.after.rank||"–")+' · nothing published</div><div style="margin-top:10px">'+
+  d.standings.map(function(s){return '<div class="share"><span class="n'+(s.mine?" me":"")+'" title="'+esc(s.url)+'">'+esc(s.label)+(s.mine?" · you":"")+'</span><span class="sbar" style="display:block"><span class="sbar"><span class="track"><i style="width:'+Math.max(2,Math.round(s.before*100))+'%;background:var(--line2)"></i></span><b class="num dim">'+pct(s.before)+'</b></span><span class="sbar" style="margin-top:3px"><span class="track"><i style="width:'+Math.max(2,Math.round(s.after*100))+'%;background:'+(s.mine?"var(--brand)":"var(--mute)")+'"></i></span><b class="num">'+pct(s.after)+'</b></span></span></div>'}).join("")+
+  '<div class="legend"><span><i style="background:var(--line2)"></i>Before</span><span><i style="background:var(--brand)"></i>After, with your passage</span></div></div></div></div>';
+  h+=tabs([
+    {id:"passage",label:"Your passage",count:d.sentences.length,html:function(){
+      return '<p class="sm dim" style="margin:8px 0 4px">Tested under the heading “'+esc(d.heading)+'”, at the top of the page\'s main content.</p><table><tbody>'+d.sentences.map(function(x){var t=x.verdict==="quotable"?"pass":x.verdict==="weak"?"warn":"fail";return '<tr><td>'+esc(x.text)+'<div class="sm" style="margin-top:3px;color:var(--'+t+')">'+esc((x.why||[]).join(", "))+'</div></td><td class="r num" style="width:56px"><span class="pill '+t+'">'+x.score+'</span></td></tr>'}).join("")+'</tbody></table>';
+    }},
+    {id:"reads",label:"What the engine reads",count:d.context.length,html:function(){
+      return '<table><tbody>'+d.context.map(function(p){return '<tr><td class="num" style="width:26px"><b>#'+p.rank+'</b></td><td><b'+(p.mine?' style="color:var(--brand)"':'')+'>'+esc(p.source)+'</b>'+(p.heading?' <span class="dim">· '+esc(p.heading)+'</span>':'')+'<blockquote>'+esc(p.text)+'</blockquote></td></tr>'}).join("")+'</tbody></table>';
+    }},
+    {id:"gap",label:"To close the gap",count:d.after.won?0:d.advice.length,html:function(){
+      if(d.after.won||!d.advice.length)return '<p class="dim" style="padding:10px 0">Nothing left: publish the passage exactly as tested.</p>';
+      return '<table><tbody>'+d.advice.map(function(x,i){return '<tr><td class="num dim" style="width:22px">'+(i+1)+'</td><td>'+esc(x)+'</td></tr>'}).join("")+'</tbody></table>';
+    }}
+  ]);
+  h+=footer(d,'<button class="btn p" data-copy="'+esc((d.heading?d.heading+"\n\n":"")+d.passage)+'">'+I.copy+'Copy the tested passage</button><button class="btn" data-act="audit">Audit my page</button>');
+  return h;
+}
+function fixkit(d){
+  var h=header(d,shortUrl(d.url));
+  var todos=d.files.reduce(function(a,f){return a+f.todos},0);
+  h+='<div class="kpis" style="grid-template-columns:1fr"><div><div class="verdict">'+d.files.length+' fixes, generated from the page as it is now</div><div class="meta">'+(todos?todos+' values getcited could not verify are marked TODO. Fill them with real facts before publishing.':'Every value comes from the page. Review, then paste.')+'</div></div></div>';
+  h+=tabs(d.files.map(function(f,i){return {id:"f"+i,label:f.file,count:f.todos||null,html:function(){return '<p class="sm dim" style="margin:8px 0 4px">'+esc(f.note)+'</p><pre>'+esc(f.content)+'</pre><div style="margin-top:8px"><button class="btn p" data-copy="'+esc(f.content)+'">'+I.copy+'Copy '+esc(f.file)+'</button></div>'}}}));
+  h+=footer(d,'<button class="btn" data-act="audit">Re-audit the page</button>');
+  return h;
+}
+
 function render(d){
   if(!d||typeof d!=="object")return;
   state.data=d;
   if(d.kind==="error"||d.error){root.innerHTML='<div class="app"><div class="bar"><span class="brand">'+LOGO+'<span>get<i>cited</i></span></span></div><div class="err">'+esc(d.error)+'</div></div>';size();return}
-  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
+  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="simulate"?simulate(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
   size();
 }
 document.addEventListener("click",function(e){

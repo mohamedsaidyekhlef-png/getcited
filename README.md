@@ -296,9 +296,9 @@ Your agent then runs this loop:
 { "mcpServers": { "getcited": { "command": "npx", "args": ["-y", "github:mohamedsaidyekhlef-png/getcited", "mcp"] } } }
 ```
 
-Tools: `getcited_audit`, `getcited_xray`, `getcited_arena`, `getcited_truth`.
+Tools: `getcited_audit`, `getcited_xray`, `getcited_arena`, `getcited_simulate` (test a rewritten passage against the live competition before you publish it), `getcited_fixkit` (ready-to-paste JSON-LD, canonical, robots.txt and llms.txt built from the page), `getcited_truth`. Prompts: *Win an AI answer*, *Audit my site*, *Who gets cited instead of me?*, *Make my page quotable*. Results come back as a readable report plus an interactive report card in clients that support MCP Apps.
 
-**Hosted, nothing to install:** add `https://www.scairos.com/api/getcited/mcp` as a custom connector in Claude or ChatGPT, or as a remote MCP server in Cursor or VS Code. The hosted server offers the audit, X-ray and arena; the truth check needs your own model key, so it runs locally only.
+**Hosted, nothing to install:** add `https://getcited.scairos.com/mcp` as a custom connector in Claude or ChatGPT, or as a remote MCP server in Cursor or VS Code. The hosted server offers every tool except the truth check, which needs your own model key, so it runs locally only.
 
 **Browser extension** for Chrome, Edge and Firefox: one click audits the page you're on. See [integrations/browser-extension](integrations/browser-extension) and [all integrations](integrations/README.md).
 
