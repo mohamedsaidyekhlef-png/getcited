@@ -11,13 +11,18 @@ export const BOT_UAS = {
   PerplexityBot: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)",
 };
 
+// Optional guard, set by hosted deployments, that vets every URL (and every
+// redirect hop) before it is fetched, e.g. to refuse private network addresses.
+let urlGuard = null;
+export function setUrlGuard(fn) { urlGuard = fn; }
+
 /**
  * Fetch a URL the way a crawler would: no JavaScript, follow redirects, time out.
  * Never throws: network errors come back as { ok:false, error }.
  */
 export async function get(url, { ua = BROWSER_UA, timeoutMs = 15000, maxBytes = 8 * 1024 * 1024 } = {}) {
   const started = Date.now();
-  if (url.startsWith("file://")) {
+  if (url.startsWith("file://") && !urlGuard) {
     try {
       const body = await readFile(new URL(url), "utf8");
       return { ok: true, status: 200, url, headers: new Headers({ "content-type": "text/html" }), body, ms: 0 };
@@ -28,11 +33,23 @@ export async function get(url, { ua = BROWSER_UA, timeoutMs = 15000, maxBytes = 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: ctrl.signal,
-      headers: { "user-agent": ua, accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8", "accept-language": "en;q=0.9,*;q=0.5" },
-    });
+    const headers = { "user-agent": ua, accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8", "accept-language": "en;q=0.9,*;q=0.5" };
+    let res, current = url;
+    if (!urlGuard) res = await fetch(url, { redirect: "follow", signal: ctrl.signal, headers });
+    else {
+      // Follow redirects by hand so every hop passes the guard.
+      for (let hop = 0; ; hop++) {
+        await urlGuard(current);
+        res = await fetch(current, { redirect: "manual", signal: ctrl.signal, headers });
+        const loc = res.headers.get("location");
+        if (res.status >= 300 && res.status < 400 && loc) {
+          if (hop >= 5) throw new Error("too many redirects");
+          current = new URL(loc, current).href;
+          continue;
+        }
+        break;
+      }
+    }
     let body = "";
     if (res.body) {
       const reader = res.body.getReader();
@@ -45,9 +62,12 @@ export async function get(url, { ua = BROWSER_UA, timeoutMs = 15000, maxBytes = 
         if (size > maxBytes) { ctrl.abort(); break; }
         chunks.push(value);
       }
-      body = Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf8");
+      const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+      let off = 0;
+      for (const c of chunks) { all.set(c, off); off += c.length; }
+      body = new TextDecoder("utf-8").decode(all); // works in Node and in browsers
     }
-    return { ok: res.ok, status: res.status, url: res.url || url, headers: res.headers, body, ms: Date.now() - started };
+    return { ok: res.ok, status: res.status, url: res.url || current, headers: res.headers, body, ms: Date.now() - started };
   } catch (e) {
     const cause = e?.cause?.code || e?.cause?.message || (e.name === "AbortError" ? "timed out" : e.message);
     return { ok: false, status: 0, url, headers: new Headers(), body: "", ms: Date.now() - started, error: cause };

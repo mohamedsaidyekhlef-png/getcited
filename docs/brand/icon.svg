@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="getcited">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7B5CFF"/>
+      <stop offset="1" stop-color="#4B3AE0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <!-- speech bubble: an AI answer -->
+  <path d="M132 136h248a40 40 0 0 1 40 40v136a40 40 0 0 1-40 40H262l-74 58v-58h-56a40 40 0 0 1-40-40V176a40 40 0 0 1 40-40z" fill="#fff"/>
+  <!-- the citation: a bracketed check -->
+  <path d="M190 196h-22v120h22M322 196h22v120h-22" fill="none" stroke="#4B3AE0" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M206 258l34 34 68-72" fill="none" stroke="#4B3AE0" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

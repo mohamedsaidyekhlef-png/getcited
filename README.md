@@ -298,6 +298,10 @@ Your agent then runs this loop:
 
 Tools: `getcited_audit`, `getcited_xray`, `getcited_arena`, `getcited_truth`.
 
+**Hosted, nothing to install:** add `https://www.scairos.com/api/getcited/mcp` as a custom connector in Claude or ChatGPT, or as a remote MCP server in Cursor or VS Code. The hosted server offers the audit, X-ray and arena; the truth check needs your own model key, so it runs locally only.
+
+**Browser extension** for Chrome, Edge and Firefox: one click audits the page you're on. See [integrations/browser-extension](integrations/browser-extension) and [all integrations](integrations/README.md).
+
 ## Bring your own model
 
 Live mode is optional and uses your key. getcited never stores it or writes it to a report.

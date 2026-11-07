@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>getcited</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<header>
+  <img src="icons/icon-32.png" alt="" width="22" height="22">
+  <b>get<span>cited</span></b>
+  <small>AI search visibility</small>
+</header>
+
+<section id="start">
+  <p class="url" id="url"></p>
+  <button id="run" class="primary">Audit this page</button>
+  <p class="note">Fetches this page, robots.txt and llms.txt the way an AI crawler would: raw HTML, no JavaScript. Chrome asks once for permission to read this site.</p>
+</section>
+
+<section id="busy" hidden>
+  <div class="spinner"></div>
+  <p>Reading the page like an AI crawler…</p>
+</section>
+
+<section id="result" hidden>
+  <div class="hero">
+    <div class="ring" id="ring"><b id="score">0</b><small>/100</small></div>
+    <div>
+      <p class="grade" id="grade"></p>
+      <p class="muted" id="verdict"></p>
+    </div>
+  </div>
+  <div class="cats" id="cats"></div>
+  <h3>Fix these first</h3>
+  <ol id="prio"></ol>
+  <h3>Sentence X-ray</h3>
+  <p id="xray" class="muted"></p>
+  <div class="actions">
+    <button id="report" class="primary">Open full report</button>
+    <button id="again">Run again</button>
+  </div>
+  <p class="note">The firewall check with real AI-crawler user agents and the Citation Arena run in the CLI: <code>npx github:mohamedsaidyekhlef-png/getcited</code></p>
+</section>
+
+<section id="error" hidden>
+  <p class="err" id="errmsg"></p>
+  <button id="retry">Try again</button>
+</section>
+
+<footer>
+  <a href="https://github.com/mohamedsaidyekhlef-png/getcited" target="_blank" rel="noopener">Open source</a> ·
+  <a href="https://www.scairos.com/getcited" target="_blank" rel="noopener">scairos.com/getcited</a>
+</footer>
+<script src="dist/engine.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

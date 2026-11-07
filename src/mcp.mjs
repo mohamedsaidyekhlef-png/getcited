@@ -12,7 +12,7 @@ import { truth } from "./truth.mjs";
 import { resolveModel } from "./llm.mjs";
 import { toJson } from "./report.mjs";
 
-const TOOLS = [
+export const TOOLS = [
   {
     name: "getcited_audit",
     description: "Audit a web page for AI-citation readiness (ChatGPT, Perplexity, Claude, Gemini, Google AI Overviews): AI crawler access in robots.txt and at the CDN, server rendering, structured data, quotability, trust. Returns a 0-100 score and prioritized fixes.",
@@ -35,7 +35,9 @@ const TOOLS = [
   },
 ];
 
-async function call(name, a) {
+export async function call(name, a, { hosted = false } = {}) {
+  if (hosted && name === "getcited_truth") throw new Error("getcited_truth needs your own model key; run getcited locally (npx github:mohamedsaidyekhlef-png/getcited mcp)");
+  if (hosted) { a = { ...a, pages: Math.min(5, a.pages || 1), competitors: (a.competitors || []).slice(0, 6), model: undefined }; }
   if (name === "getcited_audit") { const r = await audit(a.url, { pages: a.pages || 1 }); return r.error ? { error: r.error } : JSON.parse(toJson(r)); }
   if (name === "getcited_xray") {
     const r = await get(/^https?:/i.test(a.url) ? a.url : "https://" + a.url);
@@ -51,31 +53,38 @@ async function call(name, a) {
   throw new Error(`unknown tool ${name}`);
 }
 
-export function serveMcp({ input = process.stdin, output = process.stdout, version = "1.0.0" } = {}) {
-  const send = (msg) => output.write(JSON.stringify({ jsonrpc: "2.0", ...msg }) + "\n");
+/** Handle one JSON-RPC message. Returns the response object, or null for notifications. */
+export async function handleRpc(msg, { version = "1.1.0", hosted = false } = {}) {
+  if (!msg || typeof msg !== "object" || msg.jsonrpc !== "2.0") return { jsonrpc: "2.0", id: msg?.id ?? null, error: { code: -32600, message: "invalid request" } };
+  const { id, method, params } = msg;
+  if (id === undefined || id === null) return null; // notifications (initialized, cancelled…)
+  const ok = (result) => ({ jsonrpc: "2.0", id, result });
+  try {
+    if (method === "initialize") return ok({ protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "getcited", title: "getcited: unit tests for AI search", version }, instructions: "Use getcited_audit to check whether AI engines can reach and quote a page, getcited_xray to see which sentences an AI would quote, and getcited_arena to see who an AI answer engine would cite for a question and why." });
+    if (method === "ping") return ok({});
+    if (method === "tools/list") return ok({ tools: hosted ? TOOLS.filter((t) => t.name !== "getcited_truth").map((t) => ({ ...t, inputSchema: { ...t.inputSchema, properties: Object.fromEntries(Object.entries(t.inputSchema.properties).filter(([k]) => k !== "model")) } })) : TOOLS });
+    if (method === "tools/call") {
+      try {
+        const out = await call(params?.name, params?.arguments || {}, { hosted });
+        return ok({ content: [{ type: "text", text: JSON.stringify(out, null, 2) }], structuredContent: out && typeof out === "object" && !Array.isArray(out) ? out : undefined, isError: Boolean(out?.error) });
+      } catch (e) {
+        return ok({ content: [{ type: "text", text: e.message }], isError: true });
+      }
+    }
+    return { jsonrpc: "2.0", id, error: { code: -32601, message: `method not found: ${method}` } };
+  } catch (e) {
+    return { jsonrpc: "2.0", id, error: { code: -32603, message: e.message } };
+  }
+}
+
+export function serveMcp({ input = process.stdin, output = process.stdout, version = "1.1.0" } = {}) {
   const rl = createInterface({ input });
   rl.on("line", async (line) => {
     if (!line.trim()) return;
     let msg;
-    try { msg = JSON.parse(line); } catch { return send({ id: null, error: { code: -32700, message: "parse error" } }); }
-    const { id, method, params } = msg;
-    if (id === undefined) return; // notifications (initialized, cancelled…)
-    try {
-      if (method === "initialize") return send({ id, result: { protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "getcited", version } } });
-      if (method === "ping") return send({ id, result: {} });
-      if (method === "tools/list") return send({ id, result: { tools: TOOLS } });
-      if (method === "tools/call") {
-        try {
-          const out = await call(params.name, params.arguments || {});
-          return send({ id, result: { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: Boolean(out?.error) } });
-        } catch (e) {
-          return send({ id, result: { content: [{ type: "text", text: e.message }], isError: true } });
-        }
-      }
-      send({ id, error: { code: -32601, message: `method not found: ${method}` } });
-    } catch (e) {
-      send({ id, error: { code: -32603, message: e.message } });
-    }
+    try { msg = JSON.parse(line); } catch { return output.write(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error" } }) + "\n"); }
+    const res = await handleRpc(msg, { version });
+    if (res) output.write(JSON.stringify(res) + "\n");
   });
   return rl;
 }

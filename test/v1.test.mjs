@@ -203,3 +203,23 @@ test("bench: scores arena predictions against a real engine's observed citations
     assert.equal(b.rows[1].observed[0], "https://forum.example/t/1", "file observations skip the engine");
   } finally { m.close(); }
 });
+
+test("hosted mode: private addresses and redirects into them are refused; truth and model keys are not offered", async () => {
+  const { enableHostedMode, handleRpc } = await import("../src/remote.mjs");
+  const { get, setUrlGuard } = await import("../src/fetch.mjs");
+  const s = await serve("good");
+  try {
+    enableHostedMode();
+    const r = await get(s.url);
+    assert.equal(r.ok, false);
+    assert.match(r.error, /private addresses|standard ports/);
+    await assert.rejects((await import("../src/remote.mjs")).publicUrlGuard("http://127.0.0.1/"), /private addresses/);
+    const list = await handleRpc({ jsonrpc: "2.0", id: 1, method: "tools/list" }, { hosted: true });
+    const names = list.result.tools.map((t) => t.name);
+    assert.ok(!names.includes("getcited_truth"));
+    assert.ok(!("model" in list.result.tools.find((t) => t.name === "getcited_arena").inputSchema.properties));
+    const call = await handleRpc({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "getcited_xray", arguments: { url: s.url } } }, { hosted: true });
+    assert.equal(call.result.isError, true);
+    assert.equal(await handleRpc({ jsonrpc: "2.0", method: "notifications/initialized" }), null);
+  } finally { setUrlGuard(null); s.close(); }
+});
