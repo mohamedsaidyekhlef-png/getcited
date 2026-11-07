@@ -4,9 +4,7 @@ jobs:
   p:
     runs-on: ubuntu-latest
     steps:
-      - shell: bash {0}
-        run: |
-          for p in /.well-known/oauth-protected-resource /.well-known/oauth-protected-resource/mcp /.well-known/oauth-authorization-server; do
-            echo "H $p $(curl -s -o /tmp/b -w '%{http_code} %{content_type} %{redirect_url}' https://getcited.scairos.com$p) $(head -c 300 /tmp/b)"
-          done
-          echo "H www $(curl -s -o /tmp/b -w '%{http_code}' https://www.scairos.com/.well-known/oauth-protected-resource) $(head -c 200 /tmp/b)"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: cd probe && npm init -y >/dev/null && npm i @modelcontextprotocol/sdk >/dev/null && node p.mjs
