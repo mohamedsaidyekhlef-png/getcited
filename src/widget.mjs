@@ -55,6 +55,7 @@ pre{margin:4px 0 0;background:var(--panel);border:1px solid var(--line);border-r
 blockquote{margin:8px 0 0;padding:8px 12px;border-left:3px solid var(--brand);background:var(--sunk);border-radius:0 8px 8px 0;color:var(--ink2)}
 .skel{height:12px;border-radius:5px;background:var(--line);margin:10px 14px;animation:pl 1.2s infinite}@keyframes pl{50%{opacity:.45}}
 .err{padding:14px;color:var(--fail);font-weight:600}
+.inp{display:block;width:100%;margin:3px 0 8px;font:inherit;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:7px 9px}textarea.inp{resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
 .toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12px;font-weight:600;border-radius:8px;padding:6px 12px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
 @media (max-width:520px){.kpis{grid-template-columns:1fr;justify-items:start}.cats{grid-template-columns:1fr}.acts .lbl{display:none}.hide-sm{display:none}}
 `;
@@ -83,10 +84,10 @@ function openLink(url){if(oa()&&oa().openExternal){try{oa().openExternal({href:u
 function ask(text){if(oa()&&oa().sendFollowUpMessage){oa().sendFollowUpMessage({prompt:text});toast("Sent to the chat");return}request("ui/message",{role:"user",content:[{type:"text",text:text}]}).then(function(){toast("Sent to the chat")}).catch(function(){copy(text,"Prompt copied: paste it in the chat")})}
 function rerun(){
   var d=state.data;if(!d)return;var name=TOOL[d.kind];var args=state.input||(d.kind==="arena"?null:{url:d.url});
-  if(!args){ask("Run the getcited Citation Arena again for: "+d.question);return}
+  if(!args){state.form=true;render(d);return}
   root.querySelector(".kpis,.pane")&&(root.querySelector(".pane").style.opacity=".5");toast("Re-running live…");
   var p=oa()&&oa().callTool?oa().callTool(name,args):request("tools/call",{name:name,arguments:args},120000);
-  Promise.resolve(p).then(function(r){var sc=r&&(r.structuredContent||r);if(sc&&sc.kind)render(sc);else throw 0}).catch(function(){ask("Re-run "+name+" with "+JSON.stringify(args))});
+  Promise.resolve(p).then(function(r){var sc=r&&(r.structuredContent||r);if(sc&&sc.kind)render(sc);else throw 0}).catch(function(){var a=root.querySelector(".pane");if(a)a.style.opacity="";toast("This app can't run tools here. Ask in the chat instead.")});
 }
 function copy(text,msg){
   var done=function(){toast(msg||"Copied")};
@@ -117,6 +118,20 @@ function tabs(list){
 function code(f){var i=f.indexOf("\n");return i>0&&/:\s*$/.test(f.slice(0,i))?f.slice(i+1):f}
 function fixBody(f){var c=code(f);return c===f?(f.indexOf("\n")>=0?'<pre>'+esc(f)+'</pre>':'<p>'+esc(f)+'</p>'):'<p>'+esc(f.slice(0,f.length-c.length).trim())+'</p><pre>'+esc(c)+'</pre>'}
 function cap(s){s=String(s||"");return s.charAt(0).toUpperCase()+s.slice(1)}
+function arenaForm(mine,q,comps){
+  if(!state.form)return '';
+  return '<div class="pane" style="border-top:1px solid var(--line);background:var(--sunk)"><div class="k" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:650;margin:6px 0">Citation Arena</div>'+
+  '<label class="sm dim">Your page</label><input id="fMine" class="inp" value="'+esc(mine)+'" placeholder="https://yoursite.com/page">'+
+  '<label class="sm dim">The question your buyers ask</label><input id="fQ" class="inp" value="'+esc(q)+'" placeholder="How much does it cost to sell a structured settlement?">'+
+  '<label class="sm dim">Pages that answer it now (one URL per line)</label><textarea id="fC" class="inp" rows="3" placeholder="https://competitor.com/guide">'+esc((comps||[]).join("\n"))+'</textarea>'+
+  '<div style="display:flex;gap:6px;margin-top:8px"><button class="btn p" data-act="arena-run">Run the arena</button><button class="btn" data-act="arena-close">Cancel</button></div></div>';
+}
+function call(name,args){
+  var p=oa()&&oa().callTool?oa().callTool(name,args):request("tools/call",{name:name,arguments:args},120000);
+  var pane=root.querySelector(".app");if(pane)pane.style.opacity=".55";toast("Running live…");
+  return Promise.resolve(p).then(function(r){var sc=r&&(r.structuredContent||r);if(sc&&(sc.kind||sc.error)){state.form=false;state.tab=null;state.open={};state.input=args;render(sc)}else throw 0})
+  .catch(function(){if(pane)pane.style.opacity="";toast("This app can't run tools here. Ask in the chat instead.")});
+}
 function audit(d){
   var s=d.score.overall;
   var verdict=s>=85?"Ready to be cited":s>=70?"Citable, with gaps":s>=50?"At risk of being skipped":"Not citable as it stands";
@@ -130,7 +145,7 @@ function audit(d){
       return '<table><thead><tr><th style="width:18px"></th><th>Issue</th><th class="hide-sm">Status</th><th class="r">Gain</th><th class="r hide-sm">Effort</th></tr></thead><tbody>'+d.priorities.map(function(p,i){
         var o=state.open["f"+i];
         return '<tr class="row'+(o?' open':'')+'" data-tog="f'+i+'"><td><span class="chev">›</span></td><td><b>'+esc(p.title)+'</b><div class="dim sm">'+esc(cap(p.category))+'</div></td><td class="hide-sm"><span class="pill '+p.status+'">'+WORD[p.status]+'</span></td><td class="r num gain">+'+p.gain+'</td><td class="r hide-sm num dim">'+esc(p.effort)+'</td></tr>'+
-        (o?'<tr class="detail"><td></td><td colspan="4"><div class="k">Evidence</div><p>'+esc(p.evidence)+'</p>'+(p.why?'<div class="k">Why it matters</div><p>'+esc(p.why)+'</p>':'')+(p.fix?'<div class="k">Fix</div>'+fixBody(p.fix)+'<div style="display:flex;gap:6px;margin-top:8px"><button class="btn" data-copy="'+esc(code(p.fix))+'">'+I.copy+'Copy fix</button><button class="btn" data-ask="Using the getcited audit of '+esc(d.url)+', implement this fix for &quot;'+esc(p.title)+'&quot; and show me exactly what to change: '+esc(p.fix.slice(0,300))+'">'+I.spark+'Implement with AI</button></div>':'')+'</td></tr>':'');
+        (o?'<tr class="detail"><td></td><td colspan="4"><div class="k">Evidence</div><p>'+esc(p.evidence)+'</p>'+(p.why?'<div class="k">Why it matters</div><p>'+esc(p.why)+'</p>':'')+(p.fix?'<div class="k">Fix</div>'+fixBody(p.fix)+'<div style="display:flex;gap:6px;margin-top:8px"><button class="btn" data-copy="'+esc(code(p.fix))+'">'+I.copy+'Copy fix</button></div>':'')+'</td></tr>':'');
       }).join("")+'</tbody></table>';
     }},
     {id:"crawlers",label:"AI crawlers",count:crawl.length,html:function(){
@@ -145,7 +160,7 @@ function audit(d){
       return '<table><tbody>'+d.checks.map(function(c){return '<tr><td style="width:82px"><span class="pill '+c.status+'">'+WORD[c.status]+'</span></td><td><b>'+esc(c.title)+'</b><div class="dim sm">'+esc(c.evidence)+'</div></td></tr>'}).join("")+'</tbody></table>';
     }}
   ]);
-  h+=footer(d,'<button class="btn p" data-ask="Take the getcited audit of '+esc(d.url)+' and write the exact code and content changes for the top fixes, in priority order.">'+I.spark+'Fix all with AI</button><button class="btn" data-ask="Run the getcited Citation Arena for '+esc(host(d.url))+' on our buyers\' most important question, against the pages that currently answer it.">Who gets cited instead?</button>');
+  h+=footer(d,'<button class="btn p" data-act="arena-form">'+I.spark+'Who gets cited instead?</button><button class="btn" data-act="xray">X-ray the sentences</button>')+arenaForm(d.url,'');
   return h;
 }
 
@@ -158,7 +173,7 @@ function xray(d){
     {id:"worst",label:"Rewrite first",count:d.worst.length,html:function(){return sentTable(d.worst,"fail","Problem")}},
     {id:"best",label:"Most quotable",count:d.best.length,html:function(){return sentTable(d.best,"pass","Why it works")}}
   ]);
-  h+=footer(d,'<button class="btn p" data-ask="Rewrite the weakest sentences from the getcited X-ray of '+esc(d.url)+' so an answer engine would quote them. Keep every fact true and show before and after.">'+I.spark+'Rewrite with AI</button>');
+  h+=footer(d,'<button class="btn p" data-act="audit">'+I.spark+'Audit this page</button><button class="btn" data-act="arena-form">Who gets cited instead?</button>')+arenaForm(d.url,'');
   return h;
 }
 function sentTable(list,t,col){
@@ -184,7 +199,7 @@ function arena(d){
       return '<table><tbody>'+d.context.map(function(p){return '<tr><td class="num" style="width:26px"><b>#'+p.rank+'</b></td><td><b'+(p.mine?' style="color:var(--brand)"':'')+'>'+esc(p.source)+'</b>'+(p.heading?' <span class="dim">· '+esc(p.heading)+'</span>':'')+'<blockquote>'+esc(p.text)+'</blockquote></td></tr>'}).join("")+'</tbody></table>';
     }}
   ]);
-  h+=footer(d,'<button class="btn p" data-ask="Write the passage my page needs to win the question &quot;'+esc(d.question)+'&quot; in the getcited arena, using only facts already on my page, and tell me where to put it.">'+I.spark+'Write the winning passage</button>');
+  h+=footer(d,'<button class="btn p" data-act="arena-form">'+I.spark+'Try another question</button>'+(me?'<button class="btn" data-act="audit" data-url="'+esc(me.url)+'">Audit my page</button>':''))+arenaForm(me?me.url:'',d.question,d.standings.filter(function(s){return !s.mine}).map(function(s){return s.url}));
   return h;
 }
 
@@ -203,6 +218,15 @@ document.addEventListener("click",function(e){
   else if(t.dataset.copy)copy(t.dataset.copy);
   else if(t.dataset.ask)ask(t.dataset.ask);
   else if(t.dataset.act==="rerun")rerun();
+  else if(t.dataset.act==="xray")call("getcited_xray",{url:state.data.url});
+  else if(t.dataset.act==="audit")call("getcited_audit",{url:t.dataset.url||state.data.url});
+  else if(t.dataset.act==="arena-form"){state.form=true;render(state.data);var q=document.getElementById("fQ");if(q)q.focus()}
+  else if(t.dataset.act==="arena-close"){state.form=false;render(state.data)}
+  else if(t.dataset.act==="arena-run"){
+    var mine=document.getElementById("fMine").value.trim(),q=document.getElementById("fQ").value.trim(),c=document.getElementById("fC").value.split(/\s+/).filter(Boolean).slice(0,6);
+    if(!mine||!q||!c.length){toast("Add your page, the question and at least one page that answers it");return}
+    call("getcited_arena",{question:q,mine:mine,competitors:c});
+  }
 });
 function theme(t){if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}
 window.addEventListener("message",function(ev){
