@@ -102,7 +102,7 @@ export async function handleRpc(msg, { version = "1.2.0", hosted = false } = {})
     if (method === "tools/call") {
       try {
         const { data, text } = await present(params?.name, params?.arguments || {}, { hosted });
-        return ok({ content: [{ type: "text", text }], structuredContent: data && typeof data === "object" && !Array.isArray(data) ? data : undefined, isError: data?.kind === "error" });
+        return ok({ content: [{ type: "text", text }], structuredContent: data && typeof data === "object" && !Array.isArray(data) ? { report: text, ...data } : undefined, isError: data?.kind === "error" });
       } catch (e) {
         return ok({ content: [{ type: "text", text: e.message }], isError: true });
       }
