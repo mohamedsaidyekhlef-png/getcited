@@ -141,7 +141,23 @@ test("MCP server: initialize, list tools, call the X-ray", async () => {
     send({ id: 3, method: "tools/call", params: { name: "getcited_xray", arguments: { url: s.url } } });
     const out = await next();
     assert.equal(out.result.isError, false);
-    assert.ok(JSON.parse(out.result.content[0].text).summary.quotable > 5);
+    assert.ok(out.result.structuredContent.summary.quotable > 5);
+    assert.equal(out.result.structuredContent.kind, "xray");
+    assert.match(out.result.content[0].text, /## Citation X-ray: \d+% of sentences are quotable/);
+    assert.match(out.result.content[0].text, /measured live/);
+    send({ id: 4, method: "tools/call", params: { name: "getcited_audit", arguments: { url: s.url } } });
+    const au = (await next()).result;
+    assert.equal(au.structuredContent.kind, "audit");
+    assert.match(au.content[0].text, /## getcited audit: \d+\/100/);
+    send({ id: 5, method: "resources/list" });
+    const res = (await next()).result.resources;
+    assert.equal(res[0].mimeType, "text/html;profile=mcp-app");
+    send({ id: 6, method: "resources/read", params: { uri: res[0].uri } });
+    const html = (await next()).result.contents[0].text;
+    assert.match(html, /ui\/initialize/);
+    assert.ok(!/<script[^>]+src=/.test(html), "widget must be self-contained");
+    send({ id: 7, method: "prompts/get", params: { name: "who-gets-cited", arguments: { question: "q?", url: "a.com" } } });
+    assert.match((await next()).result.messages[0].content.text, /getcited_arena/);
   } finally { p.kill(); s.close(); }
 });
 

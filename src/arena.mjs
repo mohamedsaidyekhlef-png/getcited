@@ -116,7 +116,7 @@ export async function arena(question, sources, opts = {}) {
     tool: "getcited", mode: "offline", retrieval, question, k,
     fanout: perQuery,
     standings: [...standings].sort((a, b) => b.share - a.share || (a.bestRank ?? 1e9) - (b.bestRank ?? 1e9)),
-    context: context.map((p, r) => ({ rank: r + 1, source: srcs[p.source].label, mine: srcs[p.source].mine, ...pick(p) })),
+    context: context.map((p, r) => ({ rank: r + 1, source: srcs[p.source].label, url: srcs[p.source].url, mine: srcs[p.source].mine, ...pick(p) })),
   };
   const me = standings.find((s) => s.mine);
   if (me) result.gap = gapAnalysis(question, subs, me, srcs, ranking, context);

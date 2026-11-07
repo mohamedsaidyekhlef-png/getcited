@@ -96,7 +96,7 @@ export async function audit(input, opts = {}) {
   const allChecks = [...sChecks, ...first.checks];
   return {
     tool: "getcited",
-    version: "1.1.0",
+    version: "1.2.0",
     auditedAt: new Date().toISOString(),
     url: first.url,
     site: { checks: sChecks, robotsFound: Boolean(site.robots), llms: Boolean(site.llms), sitemap: site.sitemap || null },
