@@ -260,3 +260,10 @@ test("simulate: a passage that answers the question takes the citation, and the 
     assert.ok(fk.data.files.some((f) => f.file === "schema.jsonld.html"));
   } finally { s.close(); }
 });
+
+test("simulate: ### lines become sub-headings and are not scored as sentences", async () => {
+  const { passageHtml } = await import("../src/simulate.mjs");
+  const html = passageHtml("Q?", "Intro sentence here with facts.\n### Sub heading one\nBody of the first sub-section.");
+  assert.match(html, /<h3>Sub heading one<\/h3>/);
+  assert.ok(!html.includes("###"));
+});
