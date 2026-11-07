@@ -1,148 +1,230 @@
 // The in-chat getcited report card. One self-contained HTML page (no external
 // requests) that MCP Apps hosts (Claude, VS Code, Goose…) and ChatGPT render
 // next to the answer. It reads the tool's structuredContent and draws the
-// audit, X-ray or arena result in getcited's own look.
+// audit, X-ray or arena result, with actions: re-run, copy a fix, open the page,
+// and hand the next step back to the assistant.
 
 export const WIDGET_URI = "ui://getcited/report.html";
 export const WIDGET_URI_OPENAI = "ui://getcited/report-openai.html";
 
-const LOGO = `<svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8794FF"/><stop offset="1" stop-color="#5B3FE0"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#g)"/><path d="M15 18h34a5 5 0 0 1 5 5v15a5 5 0 0 1-5 5H31l-9 7v-7h-7a5 5 0 0 1-5-5V23a5 5 0 0 1 5-5z" fill="#fff"/><path d="M24 31l5 5 11-11" fill="none" stroke="#5B3FE0" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const LOGO = `<svg viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><defs><linearGradient id="gcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8794FF"/><stop offset="1" stop-color="#5B3FE0"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#gcg)"/><path d="M15 18h34a5 5 0 0 1 5 5v15a5 5 0 0 1-5 5H31l-9 7v-7h-7a5 5 0 0 1-5-5V23a5 5 0 0 1 5-5z" fill="#fff"/><path d="M24 31l5 5 11-11" fill="none" stroke="#5B3FE0" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-export const WIDGET_HTML = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>getcited report</title>
-<style>
-:root{--bg:#ffffff;--card:#F6F7FB;--line:#E6E8F0;--ink:#121626;--mute:#5E6478;--brand:#5B3FE0;--brand2:#8794FF;--pass:#16A36A;--warn:#C98A0B;--fail:#D9363E;--chip:#EEF0FA}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0B0E17;--card:#141927;--line:#232A3D;--ink:#EEF1F8;--mute:#9AA2B8;--brand:#8794FF;--brand2:#B4BCFF;--pass:#3CCB8C;--warn:#F0B43C;--fail:#FF6B6B;--chip:#1C2236}}
-:root[data-theme=dark]{--bg:#0B0E17;--card:#141927;--line:#232A3D;--ink:#EEF1F8;--mute:#9AA2B8;--brand:#8794FF;--brand2:#B4BCFF;--pass:#3CCB8C;--warn:#F0B43C;--fail:#FF6B6B;--chip:#1C2236}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
-.wrap{padding:16px;max-width:760px}
-.top{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-.01em}
-.top .b{color:var(--brand)}.live{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--mute)}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--pass);box-shadow:0 0 0 3px color-mix(in srgb,var(--pass) 25%,transparent)}
-.url{margin-top:10px;font-size:12.5px;color:var(--mute);word-break:break-all}
-h2{margin:4px 0 0;font-size:19px;line-height:1.25;letter-spacing:-.01em}
-.hero{display:flex;gap:16px;align-items:center;margin-top:14px}
-.ring{--p:0;--c:var(--pass);width:92px;height:92px;flex:none;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--c) calc(var(--p)*1%),var(--line) 0)}
-.ring>div{width:74px;height:74px;border-radius:50%;background:var(--bg);display:grid;place-items:center;text-align:center}
-.ring b{font-size:26px;line-height:1}.ring small{display:block;font-size:11px;color:var(--mute);font-weight:600}
-.verdict{font-weight:700;font-size:15px}.sub{color:var(--mute);font-size:12.5px;margin-top:3px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:14px}
-.cat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.cat b{font-size:20px}.cat span{display:block;font-size:12px;color:var(--mute)}
-.bar{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;border-radius:9px}
-.sec{margin-top:18px}.sec>p{margin:0 0 8px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
-.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:6px}
-.item .t{display:flex;gap:8px;align-items:flex-start;font-weight:650}
-.item .e{color:var(--mute);font-size:12.5px;margin-top:4px}.item .f{font-size:12.5px;margin-top:6px}.item .f b{color:var(--brand)}
-.st{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;margin-top:1px}
-.st.pass{background:var(--pass)}.st.warn{background:var(--warn)}.st.fail{background:var(--fail)}.st.info{background:var(--mute)}
-.pass{color:var(--pass)}.warn{color:var(--warn)}.fail{color:var(--fail)}
-.row{display:grid;grid-template-columns:minmax(0,1fr) 120px 44px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
-.row:last-child{border:0}.row .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row .n.me{font-weight:800;color:var(--brand)}
-.row .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
-.q{font-size:13px}.q em{display:block;font-style:normal;color:var(--mute);font-size:12px;margin-top:3px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:var(--chip);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--mute)}
-.cta{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
-button{font:inherit;font-size:13px;font-weight:650;border-radius:10px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
-button.p{background:var(--brand);border-color:var(--brand);color:#fff}
-.foot{margin-top:14px;font-size:11.5px;color:var(--mute)}
-.skel{height:14px;border-radius:6px;background:var(--line);margin-top:10px;animation:pulse 1.2s infinite}@keyframes pulse{50%{opacity:.5}}
-.err{color:var(--fail);font-weight:600;margin-top:12px}
-</style></head>
-<body><div class="wrap" id="app">
-<div class="top">${LOGO}<span>get<span class="b">cited</span></span><span class="live" id="live"><span class="dot"></span>Running live…</span></div>
-<div class="skel" style="width:60%"></div><div class="skel" style="width:85%"></div><div class="skel" style="width:40%"></div>
-</div>
-<script>
+const CSS = `
+:root{--bg:#fff;--panel:#fff;--sunk:#F7F8FA;--line:#E7E9EE;--line2:#D9DCE3;--ink:#0F1320;--ink2:#3A4050;--mute:#6B7285;--brand:#5B3FE0;--brandSoft:#EEEBFF;--pass:#12875A;--passSoft:#E6F5EE;--warn:#A86A00;--warnSoft:#FFF4DB;--fail:#C4262E;--failSoft:#FDECEC;--onBrand:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0D1017;--panel:#121621;--sunk:#0F131C;--line:#222838;--line2:#2C3346;--ink:#ECEFF6;--ink2:#C3C8D6;--mute:#8B93A8;--brand:#9AA4FF;--brandSoft:#1D2140;--pass:#3CCB8C;--passSoft:#0F2A20;--warn:#F0B43C;--warnSoft:#2D2410;--fail:#FF6B6B;--failSoft:#331618;--onBrand:#0D1017}}
+:root[data-theme=dark]{--bg:#0D1017;--panel:#121621;--sunk:#0F131C;--line:#222838;--line2:#2C3346;--ink:#ECEFF6;--ink2:#C3C8D6;--mute:#8B93A8;--brand:#9AA4FF;--brandSoft:#1D2140;--pass:#3CCB8C;--passSoft:#0F2A20;--warn:#F0B43C;--warnSoft:#2D2410;--fail:#FF6B6B;--failSoft:#331618;--onBrand:#0D1017}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+.app{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);min-width:0}
+.brand{display:flex;align-items:center;gap:7px;font-weight:700;letter-spacing:-.01em;flex:none}.brand i{font-style:normal;color:var(--brand)}
+.tool{flex:none;font-size:11px;font-weight:600;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.target{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2);font-size:12.5px}
+.acts{display:flex;gap:6px;flex:none}
+.btn{font:inherit;font-size:12px;font-weight:600;border-radius:8px;padding:5px 10px;cursor:pointer;border:1px solid var(--line2);background:var(--panel);color:var(--ink);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--sunk)}.btn.p{background:var(--brand);border-color:var(--brand);color:var(--onBrand)}.btn.p:hover{filter:brightness(1.07)}
+.btn svg{width:13px;height:13px}
+.kpis{display:grid;grid-template-columns:auto 1fr;gap:18px;padding:16px 14px;align-items:center;border-bottom:1px solid var(--line)}
+.gauge{position:relative;width:96px;height:96px}.gauge svg{transform:rotate(-90deg)}.gauge .v{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.gauge b{font-size:28px;line-height:1;font-weight:750;letter-spacing:-.02em}.gauge small{display:block;font-size:10.5px;color:var(--mute);font-weight:600;margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+.verdict{font-size:15px;font-weight:700;letter-spacing:-.01em}.meta{color:var(--mute);font-size:12px;margin-top:2px}
+.cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;margin-top:12px}
+.cat .h{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)}.cat .h b{color:var(--ink)}
+.track{height:5px;border-radius:5px;background:var(--line);margin-top:4px;overflow:hidden}.track i{display:block;height:100%;border-radius:5px}
+.tabs{display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{font:inherit;font-size:12.5px;font-weight:600;color:var(--mute);background:none;border:0;border-bottom:2px solid transparent;padding:10px 8px;cursor:pointer;white-space:nowrap}
+.tab[aria-selected=true]{color:var(--ink);border-color:var(--brand)}.tab .c{font-weight:600;color:var(--mute);background:var(--sunk);border-radius:9px;padding:0 6px;margin-left:5px;font-size:11px}
+.pane{padding:6px 14px 12px}
+table{width:100%;border-collapse:collapse}th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:650;text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}th.r,td.r{text-align:right}
+.pill{display:inline-block;font-size:11px;font-weight:650;border-radius:5px;padding:1px 6px;white-space:nowrap}
+.pill.pass{background:var(--passSoft);color:var(--pass)}.pill.warn{background:var(--warnSoft);color:var(--warn)}.pill.fail{background:var(--failSoft);color:var(--fail)}.pill.info{background:var(--sunk);color:var(--mute)}
+.gain{font-weight:700;color:var(--pass)}
+.row{cursor:pointer}.row:hover td{background:var(--sunk)}.chev{color:var(--mute);transition:transform .15s;display:inline-block}.open .chev{transform:rotate(90deg)}
+.detail td{background:var(--sunk);padding:10px 12px 12px}.detail p{margin:0 0 6px;color:var(--ink2)}.detail .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:650;margin:8px 0 3px}
+pre{margin:4px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;color:var(--ink)}
+.dim{color:var(--mute)}.sm{font-size:12px}
+.foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);background:var(--sunk)}
+.foot .src{margin-left:auto;font-size:11px;color:var(--mute)}
+.heat{display:flex;flex-wrap:wrap;gap:2px;margin-top:10px}.heat i{width:9px;height:14px;border-radius:2px}
+.q{background:var(--pass)}.w{background:var(--warn);opacity:.75}.d{background:var(--fail);opacity:.7}
+.legend{display:flex;gap:12px;font-size:11.5px;color:var(--mute);margin-top:8px}.legend span{display:inline-flex;align-items:center;gap:5px}.legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.share{display:grid;grid-template-columns:minmax(0,1fr) 46%;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}.share:last-child{border:0}
+.share .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.share .n.me{font-weight:700;color:var(--brand)}
+.sbar{display:flex;align-items:center;gap:8px}.sbar .track{flex:1;height:8px;margin:0}.sbar b{width:38px;text-align:right}
+blockquote{margin:8px 0 0;padding:8px 12px;border-left:3px solid var(--brand);background:var(--sunk);border-radius:0 8px 8px 0;color:var(--ink2)}
+.skel{height:12px;border-radius:5px;background:var(--line);margin:10px 14px;animation:pl 1.2s infinite}@keyframes pl{50%{opacity:.45}}
+.err{padding:14px;color:var(--fail);font-weight:600}
+.toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12px;font-weight:600;border-radius:8px;padding:6px 12px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
+@media (max-width:520px){.kpis{grid-template-columns:1fr;justify-items:start}.cats{grid-template-columns:1fr}.acts .lbl{display:none}.hide-sm{display:none}}
+`;
+
+const JS = String.raw`
 (function(){
-var app=document.getElementById("app"),LOGO=${JSON.stringify(LOGO)};
-var esc=function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
-var tone=function(v){return v>=75?"pass":v>=50?"warn":"fail"};
-var pct=function(x){return Math.round((x||0)*100)+"%"};
-var when=function(iso){try{return new Date(iso).toLocaleString([], {dateStyle:"medium",timeStyle:"short"})}catch(e){return iso}};
-var host=function(u){try{return new URL(u).host.replace(/^www\\./,"")}catch(e){return u}};
-var mark={pass:"✓",warn:"!",fail:"✕",info:"i"};
+var root=document.getElementById("root"),LOGO=__LOGO__,state={data:null,input:null,tool:null,tab:null,open:{}};
+var I={run:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></svg>',ext:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h4v4M13 3L7 9M12 9.5V13H3V4h3.5"/></svg>',copy:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M3 10.5V3h7.5"/></svg>',spark:'<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6z"/></svg>'};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function tone(v){return v>=75?"pass":v>=50?"warn":"fail"}
+function pct(x){return Math.round((x||0)*100)+"%"}
+function when(iso){try{return new Date(iso).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+" · "+new Date(iso).toLocaleDateString([],{month:"short",day:"numeric"})}catch(e){return iso}}
+function host(u){try{return new URL(u).host.replace(/^www\./,"")}catch(e){return u}}
+function shortUrl(u){try{var x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname).replace(/\/+$/,"")}catch(e){return u}}
+var WORD={pass:"Pass",warn:"Warning",fail:"Fail",info:"Note"};
+var TOOL={audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena"};
+var LABEL={audit:"Audit",xray:"X-ray",arena:"Citation Arena"};
+
+// Host bridge: MCP Apps (Claude, VS Code…) and the ChatGPT Apps SDK.
 var nextId=1,pending={};
 function post(m){try{window.parent.postMessage(m,"*")}catch(e){}}
-function request(method,params){var id=nextId++;post({jsonrpc:"2.0",id:id,method:method,params:params||{}});return new Promise(function(res,rej){pending[id]={res:res,rej:rej};setTimeout(function(){if(pending[id]){delete pending[id];rej(new Error("timeout"))}},4000)})}
+function request(method,params,ms){var id=nextId++;post({jsonrpc:"2.0",id:id,method:method,params:params||{}});return new Promise(function(res,rej){pending[id]={res:res,rej:rej};setTimeout(function(){if(pending[id]){delete pending[id];rej(new Error("timeout"))}},ms||5000)})}
 function notify(method,params){post({jsonrpc:"2.0",method:method,params:params||{}})}
-function open(url){
-  if(window.openai&&window.openai.openExternal){try{window.openai.openExternal({href:url});return}catch(e){}}
-  request("ui/open-link",{url:url}).catch(function(){window.open(url,"_blank","noopener")});
+var oa=function(){return window.openai||null};
+function openLink(url){if(oa()&&oa().openExternal){try{oa().openExternal({href:url});return}catch(e){}}request("ui/open-link",{url:url}).catch(function(){window.open(url,"_blank","noopener")})}
+function ask(text){if(oa()&&oa().sendFollowUpMessage){oa().sendFollowUpMessage({prompt:text});toast("Sent to the chat");return}request("ui/message",{role:"user",content:[{type:"text",text:text}]}).then(function(){toast("Sent to the chat")}).catch(function(){copy(text,"Prompt copied: paste it in the chat")})}
+function rerun(){
+  var d=state.data;if(!d)return;var name=TOOL[d.kind];var args=state.input||(d.kind==="arena"?null:{url:d.url});
+  if(!args){ask("Run the getcited Citation Arena again for: "+d.question);return}
+  root.querySelector(".kpis,.pane")&&(root.querySelector(".pane").style.opacity=".5");toast("Re-running live…");
+  var p=oa()&&oa().callTool?oa().callTool(name,args):request("tools/call",{name:name,arguments:args},120000);
+  Promise.resolve(p).then(function(r){var sc=r&&(r.structuredContent||r);if(sc&&sc.kind)render(sc);else throw 0}).catch(function(){ask("Re-run "+name+" with "+JSON.stringify(args))});
 }
-function ask(text){
-  if(window.openai&&window.openai.sendFollowUpMessage){window.openai.sendFollowUpMessage({prompt:text});return}
-  request("ui/message",{role:"user",content:[{type:"text",text:text}]}).catch(function(){});
+function copy(text,msg){
+  var done=function(){toast(msg||"Copied")};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(fallback)}else fallback();
+  function fallback(){var t=document.createElement("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.select();try{document.execCommand("copy");done()}catch(e){toast("Select the text to copy it")}t.remove()}
 }
-function size(){notify("ui/notifications/size-changed",{width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight})}
-function head(d,title){
-  return '<div class="top">'+LOGO+'<span>get<span class="b">cited</span></span><span class="live"><span class="dot"></span>Live result · '+esc(when(d.measuredAt))+'</span></div>'+title;
+var tt;function toast(m){var el=document.getElementById("toast");el.textContent=m;el.className="toast on";clearTimeout(tt);tt=setTimeout(function(){el.className="toast"},1800)}
+function size(){notify("ui/notifications/size-changed",{width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight});if(oa()&&oa().notifyIntrinsicHeight){try{oa().notifyIntrinsicHeight(document.documentElement.scrollHeight)}catch(e){}}}
+
+function gauge(v,label,sub){
+  var r=42,c=2*Math.PI*r,t=tone(v);
+  return '<div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="'+r+'" fill="none" stroke="var(--line)" stroke-width="8"/>'+(v>0?'<circle cx="48" cy="48" r="'+r+'" fill="none" stroke="var(--'+t+')" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+(c*Math.min(v,100)/100).toFixed(1)+' '+c.toFixed(1)+'"/>':'')+'</svg><div class="v"><div><b class="num">'+esc(label)+'</b><small>'+esc(sub)+'</small></div></div></div>';
 }
-function foot(d,extra){
-  return '<div class="cta">'+(extra||"")+'<button data-open="https://www.scairos.com/getcited">Open getcited ↗</button></div>'+
-  '<div class="foot">Fetched '+esc(when(d.measuredAt))+(d.responseMs!=null?' · page served in '+d.responseMs+' ms':'')+' · read as raw HTML, the way AI crawlers see it · open source, MIT</div>';
+function track(v,color){return '<div class="track"><i style="width:'+Math.max(2,v)+'%;background:var(--'+(color||tone(v))+')"></i></div>'}
+function header(d,target){
+  return '<div class="bar"><span class="brand">'+LOGO+'<span>get<i>cited</i></span></span><span class="tool">'+LABEL[d.kind]+'</span><span class="target" title="'+esc(target)+'">'+esc(target)+'</span><span class="acts">'+
+  '<button class="btn" data-act="rerun" title="Fetch again and re-score">'+I.run+'<span class="lbl">Re-run</span></button>'+
+  (d.url?'<button class="btn hide-sm" data-open="'+esc(d.url)+'" title="Open the page">'+I.ext+'<span class="lbl">Open</span></button>':'')+'</span></div>';
 }
+function footer(d,primary){
+  return '<div class="foot">'+primary+'<span class="src">Live fetch '+esc(when(d.measuredAt))+(d.responseMs!=null?' · '+d.responseMs+' ms':'')+' · <a href="#" data-open="https://www.scairos.com/getcited" style="color:inherit">getcited</a></span></div>';
+}
+function tabs(list){
+  if(!state.tab||!list.some(function(t){return t.id===state.tab}))state.tab=list[0].id;
+  return '<div class="tabs" role="tablist">'+list.map(function(t){return '<button class="tab" role="tab" data-tab="'+t.id+'" aria-selected="'+(t.id===state.tab)+'">'+esc(t.label)+(t.count!=null?'<span class="c num">'+t.count+'</span>':'')+'</button>'}).join("")+'</div><div class="pane">'+list.filter(function(t){return t.id===state.tab})[0].html()+'</div>';
+}
+
+function code(f){var i=f.indexOf("\n");return i>0&&/:\s*$/.test(f.slice(0,i))?f.slice(i+1):f}
+function fixBody(f){var c=code(f);return c===f?(f.indexOf("\n")>=0?'<pre>'+esc(f)+'</pre>':'<p>'+esc(f)+'</p>'):'<p>'+esc(f.slice(0,f.length-c.length).trim())+'</p><pre>'+esc(c)+'</pre>'}
+function cap(s){s=String(s||"");return s.charAt(0).toUpperCase()+s.slice(1)}
 function audit(d){
-  var s=d.score.overall,c=tone(s);
-  var verdict=s>=75?"AI engines can reach, read and quote this page.":s>=50?"Citable, with gaps an engine will notice.":"AI engines will struggle to cite this page.";
-  var h=head(d,'<div class="url">'+esc(d.url)+'</div>');
-  h+='<div class="hero"><div class="ring" style="--p:'+s+';--c:var(--'+c+')"><div><div><b>'+s+'</b><small>Grade '+esc(d.score.grade)+'</small></div></div></div><div><h2>'+esc(verdict)+'</h2><div class="sub">AI-citation readiness for ChatGPT, Perplexity, Claude, Gemini and Google AI Overviews.</div></div></div>';
-  h+='<div class="grid">'+d.categories.filter(function(x){return x.score!=null}).map(function(x){var t=tone(x.score);return '<div class="cat"><b class="'+t+'">'+x.score+'</b><span>'+esc(x.label)+'</span><div class="bar"><i style="width:'+x.score+'%;background:var(--'+t+')"></i></div></div>'}).join("")+'</div>';
-  var ACC=["robots-ai","cdn-block","server-rendered","indexable","llms-txt"];var acc=d.checks.filter(function(x){return ACC.indexOf(x.id)>=0});
-  if(acc.length)h+='<div class="sec"><p>Evidence: AI crawler access</p>'+acc.map(item).join("")+'</div>';
-  if(d.priorities.length)h+='<div class="sec"><p>Fix these first</p>'+d.priorities.slice(0,5).map(function(p){return item(ACC.indexOf(p.id)>=0?{title:p.title,status:p.status,fix:p.fix}:p,true)}).join("")+'</div>';
-  else h+='<div class="sec"><div class="item"><div class="t"><span class="st pass">✓</span>Nothing urgent. This page is ready to be cited.</div></div></div>';
-  h+=foot(d,'<button class="p" data-ask="Run the getcited Citation Arena for '+esc(host(d.url))+': who gets cited instead of us for our buyers\\' main question?">Who gets cited instead? →</button><button data-ask="Run a getcited X-ray on '+esc(d.url)+' and rewrite the weakest sentences.">X-ray the sentences</button>');
+  var s=d.score.overall;
+  var verdict=s>=85?"Ready to be cited":s>=70?"Citable, with gaps":s>=50?"At risk of being skipped":"Not citable as it stands";
+  var h=header(d,shortUrl(d.url));
+  h+='<div class="kpis">'+gauge(s,s,"Grade "+d.score.grade)+'<div style="min-width:0"><div class="verdict">'+verdict+'</div><div class="meta num">'+d.passed+' of '+d.total+' checks pass'+(d.browserStatus?' · HTTP '+d.browserStatus:'')+(d.responseMs!=null?' · '+d.responseMs+' ms':'')+(d.facts&&d.facts.words?' · '+Number(d.facts.words).toLocaleString()+' words in HTML':'')+'</div>'+
+  '<div class="cats">'+d.categories.filter(function(c){return c.score!=null}).map(function(c){return '<div class="cat" title="'+esc(c.question)+'"><div class="h"><span>'+esc(c.label)+'</span><b class="num">'+c.score+'</b></div>'+track(c.score)+'</div>'}).join("")+'</div></div></div>';
+  var crawl=d.crawlers.filter(function(b){return b.role!=="training"||b.live});
+  h+=tabs([
+    {id:"fixes",label:"Fixes",count:d.priorities.length,html:function(){
+      if(!d.priorities.length)return '<p class="dim" style="padding:10px 0">No open issues on this page.</p>';
+      return '<table><thead><tr><th style="width:18px"></th><th>Issue</th><th class="hide-sm">Status</th><th class="r">Gain</th><th class="r hide-sm">Effort</th></tr></thead><tbody>'+d.priorities.map(function(p,i){
+        var o=state.open["f"+i];
+        return '<tr class="row'+(o?' open':'')+'" data-tog="f'+i+'"><td><span class="chev">›</span></td><td><b>'+esc(p.title)+'</b><div class="dim sm">'+esc(cap(p.category))+'</div></td><td class="hide-sm"><span class="pill '+p.status+'">'+WORD[p.status]+'</span></td><td class="r num gain">+'+p.gain+'</td><td class="r hide-sm num dim">'+esc(p.effort)+'</td></tr>'+
+        (o?'<tr class="detail"><td></td><td colspan="4"><div class="k">Evidence</div><p>'+esc(p.evidence)+'</p>'+(p.why?'<div class="k">Why it matters</div><p>'+esc(p.why)+'</p>':'')+(p.fix?'<div class="k">Fix</div>'+fixBody(p.fix)+'<div style="display:flex;gap:6px;margin-top:8px"><button class="btn" data-copy="'+esc(code(p.fix))+'">'+I.copy+'Copy fix</button><button class="btn" data-ask="Using the getcited audit of '+esc(d.url)+', implement this fix for &quot;'+esc(p.title)+'&quot; and show me exactly what to change: '+esc(p.fix.slice(0,300))+'">'+I.spark+'Implement with AI</button></div>':'')+'</td></tr>':'');
+      }).join("")+'</tbody></table>';
+    }},
+    {id:"crawlers",label:"AI crawlers",count:crawl.length,html:function(){
+      if(!crawl.length)return '<p class="dim" style="padding:10px 0">robots.txt could not be read, so every crawler is treated as allowed.</p>';
+      return '<table><thead><tr><th>Crawler</th><th class="hide-sm">Operator</th><th class="hide-sm">Purpose</th><th>robots.txt</th><th>Live request</th></tr></thead><tbody>'+crawl.map(function(b){
+        var rob=b.allowed==null?'<span class="pill info">not read</span>':b.allowed?'<span class="pill pass">Allowed</span>':'<span class="pill fail">Blocked</span>';
+        var live=b.live?(b.live.blocked?'<span class="pill fail num">'+esc(b.live.status||b.live.error)+' rejected</span>':'<span class="pill pass num">'+esc(b.live.status)+' OK</span>'):'<span class="dim sm" title="Search engines verify these crawlers by IP, so a spoofed request proves nothing">–</span>';
+        return '<tr><td><b>'+esc(b.bot)+'</b><div class="dim sm" title="'+esc(b.rule)+'" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.rule||"")+'</div></td><td class="hide-sm">'+esc(b.owner)+'</td><td class="hide-sm dim">'+esc(b.role)+'</td><td>'+rob+'</td><td>'+live+'</td></tr>';
+      }).join("")+'</tbody></table><p class="dim sm" style="margin:8px 0 0">Live request: the page fetched with each crawler\'s real user agent, compared with a browser'+(d.browserStatus?' ('+d.browserStatus+')':'')+'. Catches CDN and firewall blocks that robots.txt doesn\'t show.</p>';
+    }},
+    {id:"checks",label:"All checks",count:d.checks.length,html:function(){
+      return '<table><tbody>'+d.checks.map(function(c){return '<tr><td style="width:82px"><span class="pill '+c.status+'">'+WORD[c.status]+'</span></td><td><b>'+esc(c.title)+'</b><div class="dim sm">'+esc(c.evidence)+'</div></td></tr>'}).join("")+'</tbody></table>';
+    }}
+  ]);
+  h+=footer(d,'<button class="btn p" data-ask="Take the getcited audit of '+esc(d.url)+' and write the exact code and content changes for the top fixes, in priority order.">'+I.spark+'Fix all with AI</button><button class="btn" data-ask="Run the getcited Citation Arena for '+esc(host(d.url))+' on our buyers\' most important question, against the pages that currently answer it.">Who gets cited instead?</button>');
   return h;
 }
-function item(x,fix){
-  return '<div class="item"><div class="t"><span class="st '+esc(x.status)+'">'+(mark[x.status]||"•")+'</span><span>'+esc(x.title)+'</span></div>'+(x.evidence?'<div class="e">'+esc(x.evidence)+'</div>':'')+(fix&&x.fix?'<div class="f"><b>Fix</b> '+esc(x.fix)+'</div>':'')+'</div>';
-}
+
 function xray(d){
-  var S=d.summary,t=tone(S.quotableShare*1.6);
-  var h=head(d,'<div class="url">'+esc(d.url)+'</div>');
-  h+='<div class="hero"><div class="ring" style="--p:'+S.quotableShare+';--c:var(--'+t+')"><div><div><b>'+S.quotableShare+'%</b><small>quotable</small></div></div></div><div><h2>'+S.quotable+' of '+S.sentences+' sentences are worth quoting.</h2><div class="sub">'+S.dead+' are dead weight ('+S.deadWordShare+'% of the words). Answer engines lift sentences that stand alone, name their subject and state one specific fact.</div></div></div>';
-  h+='<div class="grid"><div class="cat"><b class="pass">'+S.quotable+'</b><span>Quotable</span></div><div class="cat"><b class="warn">'+S.weak+'</b><span>Weak</span></div><div class="cat"><b class="fail">'+S.dead+'</b><span>Dead weight</span></div></div>';
-  if(d.best.length)h+='<div class="sec"><p>What an AI would quote</p>'+d.best.map(function(s){return '<div class="item q"><div class="t"><span class="st pass">✓</span><span>“'+esc(s.text)+'”</span></div><div class="e">'+s.score+'/100 · '+esc((s.why||[]).join(", "))+'</div></div>'}).join("")+'</div>';
-  if(d.worst.length)h+='<div class="sec"><p>Rewrite these first</p>'+d.worst.map(function(s){return '<div class="item q"><div class="t"><span class="st fail">✕</span><span>“'+esc(s.text)+'”</span></div><div class="e">'+esc((s.why||[]).join("; "))+'</div></div>'}).join("")+'</div>';
-  h+=foot(d,'<button class="p" data-ask="Rewrite the weakest sentences from that getcited X-ray so an AI engine would quote them. Keep every fact true.">Rewrite them for me →</button>');
+  var S=d.summary,strip=String(d.strip||"");
+  var h=header(d,shortUrl(d.url));
+  h+='<div class="kpis">'+gauge(S.quotableShare,S.quotableShare+"%","quotable")+'<div style="min-width:0"><div class="verdict num">'+S.quotable+' of '+S.sentences+' sentences are worth quoting</div><div class="meta num">'+S.dead+' dead weight carrying '+S.deadWordShare+'% of the words · average '+S.average+'/100'+(S.firstQuotable>2?' · first quotable is #'+(S.firstQuotable+1):'')+'</div>'+
+  (strip?'<div class="heat" title="Every sentence on the page, in order">'+strip.split("").map(function(c){return '<i class="'+c+'"></i>'}).join("")+'</div><div class="legend"><span><i class="q"></i>Quotable '+S.quotable+'</span><span><i class="w"></i>Weak '+S.weak+'</span><span><i class="d"></i>Dead '+S.dead+'</span></div>':'')+'</div></div>';
+  h+=tabs([
+    {id:"worst",label:"Rewrite first",count:d.worst.length,html:function(){return sentTable(d.worst,"fail","Problem")}},
+    {id:"best",label:"Most quotable",count:d.best.length,html:function(){return sentTable(d.best,"pass","Why it works")}}
+  ]);
+  h+=footer(d,'<button class="btn p" data-ask="Rewrite the weakest sentences from the getcited X-ray of '+esc(d.url)+' so an answer engine would quote them. Keep every fact true and show before and after.">'+I.spark+'Rewrite with AI</button>');
   return h;
 }
+function sentTable(list,t,col){
+  return '<table><thead><tr><th>Sentence</th><th class="r">Score</th></tr></thead><tbody>'+list.map(function(s){return '<tr><td>“'+esc(s.text)+'”<div class="sm" style="margin-top:3px;color:var(--'+t+')">'+esc((s.why||[]).join(t==="fail"?"; ":", "))+'</div></td><td class="r num"><b>'+s.score+'</b></td></tr>'}).join("")+'</tbody></table>';
+}
+
 function arena(d){
   var me=d.standings.filter(function(s){return s.mine})[0],lead=d.standings[0];
-  var title=me?(d.gap&&d.gap.won?esc(me.label)+" wins this question.":me.share>0?esc(me.label)+" is in the answer, but "+esc(lead.label)+" leads.":esc(me.label)+" is not cited. "+esc(lead.label)+" takes the answer."):"Who gets cited";
-  var h=head(d,'<div class="url">Question: “'+esc(d.question)+'”</div><h2 style="margin-top:10px">'+title+'</h2>');
-  h+='<div class="sec"><p>Citation share</p><div class="item">'+d.standings.map(function(s){var col=s.mine?"var(--brand)":"var(--mute)";return '<div class="row"><span class="n'+(s.mine?" me":"")+'">'+esc(s.label)+(s.mine?" (you)":"")+'</span><div class="bar" style="margin:0"><i style="width:'+Math.max(2,Math.round(s.share*100))+'%;background:'+col+'"></i></div><span class="v">'+(s.ok?pct(s.share):"–")+'</span></div>'}).join("")+'</div></div>';
-  if(d.gap&&d.gap.advice&&d.gap.advice.length)h+='<div class="sec"><p>How to take the citation</p>'+d.gap.advice.map(function(a){return '<div class="item"><div class="t"><span class="st warn">!</span><span style="font-weight:500">'+esc(a)+'</span></div></div>'}).join("")+'</div>';
-  if(d.context.length)h+='<div class="sec"><p>Passages the engine would read</p>'+d.context.slice(0,3).map(function(p){return '<div class="item q"><div class="t"><span class="st '+(p.mine?"pass":"info")+'">'+p.rank+'</span><span>'+esc(p.source)+(p.heading?' · '+esc(p.heading):'')+'</span></div><div class="e">“'+esc(p.text)+'”</div></div>'}).join("")+'</div>';
-  h+='<div class="sec"><p>Query fan-out</p><div class="chips">'+d.fanout.map(function(f){return '<span class="chip">'+esc(f)+'</span>'}).join("")+'<span class="chip">'+esc(d.retrieval)+'</span></div></div>';
-  h+=foot(d,'<button class="p" data-ask="Write the passage my page needs to win that getcited arena question, using only facts from my page.">Write the winning passage →</button>');
+  var verdict=me?(d.gap&&d.gap.won?me.label+" wins this question":me.share>0?me.label+" holds "+pct(me.share)+"; "+lead.label+" leads":me.label+" is not cited"):"Citation share";
+  var h=header(d,"“"+d.question+"”");
+  var total=d.standings.reduce(function(a,s){return a+(s.passages||0)},0);
+  h+='<div class="kpis">'+gauge(Math.round((me?me.share:0)*100),me?pct(me.share):"–","your share")+'<div style="min-width:0"><div class="verdict">'+esc(verdict)+'</div><div class="meta num">'+d.standings.length+' pages · '+total+' passages · '+d.fanout.length+' query variants · '+esc(d.retrieval)+'</div><div style="margin-top:10px">'+
+  d.standings.map(function(s){return '<div class="share"><span class="n'+(s.mine?" me":"")+'" title="'+esc(s.url)+'">'+esc(s.label)+(s.mine?" · you":"")+'</span><span class="sbar">'+(s.ok?'<span class="track"><i style="width:'+Math.max(2,Math.round(s.share*100))+'%;background:'+(s.mine?"var(--brand)":"var(--mute)")+'"></i></span><b class="num">'+pct(s.share)+'</b>':'<span class="pill fail">failed to load</span>')+'</span></div>'}).join("")+'</div></div></div>';
+  h+=tabs([
+    {id:"todo",label:"What to change",count:d.gap&&d.gap.advice?d.gap.advice.length:0,html:function(){
+      var a=d.gap&&d.gap.advice||[];if(!a.length)return '<p class="dim" style="padding:10px 0">Your page already holds the top passage for this question.</p>';
+      return '<table><tbody>'+a.map(function(x,i){return '<tr><td class="num dim" style="width:22px">'+(i+1)+'</td><td>'+esc(x)+'</td></tr>'}).join("")+'</tbody></table>';
+    }},
+    {id:"fan",label:"Query fan-out",count:d.fanout.length,html:function(){
+      return '<table><thead><tr><th>Variant the engine searches</th><th class="hide-sm">Intent</th><th>Top passage from</th></tr></thead><tbody>'+d.fanout.map(function(f){var mine=me&&f.winner===me.label;return '<tr><td>'+esc(f.q)+'</td><td class="hide-sm dim">'+esc(f.why)+'</td><td><span class="pill '+(mine?"pass":"info")+'">'+esc(f.winner||"none")+'</span></td></tr>'}).join("")+'</tbody></table>';
+    }},
+    {id:"pass",label:"Passages read",count:d.context.length,html:function(){
+      return '<table><tbody>'+d.context.map(function(p){return '<tr><td class="num" style="width:26px"><b>#'+p.rank+'</b></td><td><b'+(p.mine?' style="color:var(--brand)"':'')+'>'+esc(p.source)+'</b>'+(p.heading?' <span class="dim">· '+esc(p.heading)+'</span>':'')+'<blockquote>'+esc(p.text)+'</blockquote></td></tr>'}).join("")+'</tbody></table>';
+    }}
+  ]);
+  h+=footer(d,'<button class="btn p" data-ask="Write the passage my page needs to win the question &quot;'+esc(d.question)+'&quot; in the getcited arena, using only facts already on my page, and tell me where to put it.">'+I.spark+'Write the winning passage</button>');
   return h;
 }
+
 function render(d){
   if(!d||typeof d!=="object")return;
-  if(d.error){app.innerHTML='<div class="top">'+LOGO+'<span>get<span class="b">cited</span></span></div><div class="err">'+esc(d.error)+'</div>';size();return}
-  try{app.innerHTML=d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):"";}catch(e){app.innerHTML='<div class="err">Could not draw this result.</div>'}
+  state.data=d;
+  if(d.kind==="error"||d.error){root.innerHTML='<div class="app"><div class="bar"><span class="brand">'+LOGO+'<span>get<i>cited</i></span></span></div><div class="err">'+esc(d.error)+'</div></div>';size();return}
+  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
   size();
 }
-document.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;if(b.dataset.open)open(b.dataset.open);if(b.dataset.ask)ask(b.dataset.ask)});
+document.addEventListener("click",function(e){
+  var t=e.target.closest("[data-tab],[data-tog],[data-open],[data-ask],[data-copy],[data-act]");if(!t)return;e.preventDefault();
+  if(t.dataset.tab){state.tab=t.dataset.tab;render(state.data)}
+  else if(t.dataset.tog){state.open[t.dataset.tog]=!state.open[t.dataset.tog];render(state.data)}
+  else if(t.dataset.open)openLink(t.dataset.open);
+  else if(t.dataset.copy)copy(t.dataset.copy);
+  else if(t.dataset.ask)ask(t.dataset.ask);
+  else if(t.dataset.act==="rerun")rerun();
+});
 function theme(t){if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}
 window.addEventListener("message",function(ev){
   var m=ev.data;if(!m||m.jsonrpc!=="2.0")return;
   if(m.id!=null&&pending[m.id]){var p=pending[m.id];delete pending[m.id];m.error?p.rej(m.error):p.res(m.result);return}
+  if(m.method==="ui/notifications/tool-input"&&m.params)state.input=m.params.arguments||null;
   if(m.method==="ui/notifications/tool-result"){var r=m.params||{};render(r.structuredContent||r)}
   if(m.method==="ui/notifications/host-context-changed"&&m.params)theme(m.params.theme);
 });
-// MCP Apps handshake, retried while the host starts up.
 var tries=0;(function hello(){
   request("ui/initialize",{appInfo:{name:"getcited",version:"1.2.0"},appCapabilities:{},protocolVersion:"2026-01-26"})
   .then(function(r){if(r&&r.hostContext)theme(r.hostContext.theme);notify("ui/notifications/initialized",{});size()})
   .catch(function(){if(++tries<5)setTimeout(hello,300*tries)});
 })();
-// ChatGPT Apps SDK.
-function fromOpenAI(){if(window.openai){theme(window.openai.theme);if(window.openai.toolOutput)render(window.openai.toolOutput)}}
+function fromOpenAI(){var o=oa();if(!o)return;theme(o.theme);if(o.toolInput)state.input=o.toolInput;if(o.toolOutput&&o.toolOutput.kind&&o.toolOutput!==state.data)render(o.toolOutput)}
 window.addEventListener("openai:set_globals",fromOpenAI);fromOpenAI();
 if(window.ResizeObserver)new ResizeObserver(size).observe(document.body);
 })();
-</script></body></html>`;
+`.replace("__LOGO__", JSON.stringify(LOGO));
+
+export const WIDGET_HTML = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>getcited report</title><style>${CSS}</style></head>
+<body><div id="root"><div class="app"><div class="bar"><span class="brand">${LOGO}<span>get<i>cited</i></span></span><span class="target">Fetching live…</span></div><div class="skel" style="width:55%"></div><div class="skel" style="width:80%"></div><div class="skel" style="width:35%;margin-bottom:16px"></div></div></div><div id="toast" class="toast"></div>
+<script>${JS}</script></body></html>`;

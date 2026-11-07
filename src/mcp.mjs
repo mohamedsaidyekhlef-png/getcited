@@ -79,7 +79,7 @@ export async function call(name, a, { hosted = false } = {}) {
     const r = await get(/^https?:/i.test(a.url) ? a.url : "https://" + a.url);
     if (!r.ok) return { error: r.error || `HTTP ${r.status}` };
     const x = xray(readHtml(r.body));
-    return { url: r.url, fetched: { status: r.status, ms: r.ms }, summary: x.summary, best: x.best, worst: x.worst };
+    return { url: r.url, fetched: { status: r.status, ms: r.ms }, summary: x.summary, strip: x.sentences.map((t) => t.verdict[0]).join(""), best: x.best, worst: x.worst };
   }
   if (name === "getcited_arena") {
     const r = await arena(a.question, [{ url: a.mine, mine: true }, ...(a.competitors || []).map((url) => ({ url }))], { k: a.k || 5, llm: a.model ? resolveModel(a.model) : undefined });

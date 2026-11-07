@@ -143,12 +143,12 @@ test("MCP server: initialize, list tools, call the X-ray", async () => {
     assert.equal(out.result.isError, false);
     assert.ok(out.result.structuredContent.summary.quotable > 5);
     assert.equal(out.result.structuredContent.kind, "xray");
-    assert.match(out.result.content[0].text, /## Citation X-ray: \d+% of sentences are quotable/);
-    assert.match(out.result.content[0].text, /measured live/);
+    assert.match(out.result.content[0].text, /\*\*\d+% of sentences are quotable\*\*/);
+    assert.match(out.result.content[0].text, /Fetched \d{4}-\d\d-\d\d/);
     send({ id: 4, method: "tools/call", params: { name: "getcited_audit", arguments: { url: s.url } } });
     const au = (await next()).result;
     assert.equal(au.structuredContent.kind, "audit");
-    assert.match(au.content[0].text, /## getcited audit: \d+\/100/);
+    assert.match(au.content[0].text, /\*\*\d+\/100 \([A-F]\)\*\*/);
     send({ id: 5, method: "resources/list" });
     const res = (await next()).result.resources;
     assert.equal(res[0].mimeType, "text/html;profile=mcp-app");

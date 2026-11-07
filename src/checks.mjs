@@ -214,7 +214,8 @@ export function siteChecks(site) {
     if (!site.browserOk) add(cdnDef, "info", `The page itself didn't load for a normal browser (${site.browserStatus}), so bot access wasn't compared.`, "");
     else add(cdnDef, blocked.length ? "fail" : "pass",
       blocked.length ? `Rejected: ${blocked.map((p) => `${p.bot} → ${p.status || p.error}${p.challenge ? " (challenge page)" : ""}`).join(", ")}. A normal browser gets ${site.browserStatus}.` : `${site.botProbe.map((p) => `${p.bot} ${p.status}`).join(", ")}: same content as a browser.`,
-      blocked.length ? "Allow verified AI search crawlers in your CDN or firewall (in Cloudflare: Security → Bots, and AI Crawl Control). Keep training bots blocked if you prefer." : "");
+      blocked.length ? "Allow verified AI search crawlers in your CDN or firewall (in Cloudflare: Security → Bots, and AI Crawl Control). Keep training bots blocked if you prefer." : "",
+      { probe: site.botProbe.map((p) => ({ bot: p.bot, status: p.status || 0, error: p.error || null, blocked: Boolean(p.blocked), challenge: Boolean(p.challenge) })), browserStatus: site.browserStatus });
   }
 
   const llmsDef = C("llms-txt", "structure", "llms.txt guide for AI", 2, "A plain-Markdown map of your key pages for AI tools. Low cost; adoption by the big engines is still limited, so it's a small bonus, not a fix.");
