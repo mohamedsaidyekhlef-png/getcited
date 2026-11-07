@@ -4,8 +4,9 @@ jobs:
   p:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          for i in $(seq 1 40); do
+      - shell: bash {0}
+        run: |
+          for i in $(seq 1 50); do
             code=$(curl -s -o /tmp/r -w '%{http_code}' -m 20 -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}' https://getcited.scairos.com/mcp)
             [ "$code" = 200 ] && break; sleep 15
           done
