@@ -5,7 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "DNS $(dig +short getcited.scairos.com | tr '\n' ' ')"
-          for u in https://getcited.scairos.com/mcp https://www.scairos.com/api/getcited/mcp https://www.scairos.com/mcp; do
-            echo "POST $u -> $(curl -s -o /dev/null -w '%{http_code}' -m 20 -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}' $u)"
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /tmp/r -w '%{http_code}' -m 20 -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}' https://getcited.scairos.com/mcp)
+            [ "$code" = 200 ] && break; sleep 15
           done
+          echo "MCP $code $(head -c 160 /tmp/r)"
+          echo "PRM $(curl -s -m 20 https://getcited.scairos.com/.well-known/oauth-protected-resource)"
+          echo "ICO $(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' https://getcited.scairos.com/favicon.ico)"
+          echo "ROOT $(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' https://getcited.scairos.com/)"
+          echo "AUTH $(curl -s 'https://getcited.scairos.com/api/getcited/oauth?step=authorize&response_type=code&client_id=x&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&code_challenge=a&code_challenge_method=S256' | grep -o '<h1>[^<]*')"
