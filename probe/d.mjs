@@ -1,0 +1,13 @@
+import { loadSource } from "../src/arena.mjs";
+import { inject, passageHtml } from "../src/simulate.mjs";
+import { readHtml } from "../src/html.mjs";
+import { passages } from "../src/passages.mjs";
+const m = await loadSource({ url: "https://www.settlementdecisions.com/" });
+const b = m.body;
+console.log("D len", b.length, "main", /<main\b/i.test(b), "article", /<article\b/i.test(b), "body", /<body\b/i.test(b));
+const edited = inject(b, passageHtml("How much does it cost to sell a structured settlement?", "Selling a structured settlement costs the discount. Buyers apply a discount rate, often between 9% and 15%."));
+const pg = readHtml(edited);
+console.log("D hasMain", pg.hasMain, "blocks", pg.blocks.length, "first blocks", JSON.stringify(pg.blocks.slice(0, 6).map((x) => [x.tag, x.inMain, x.text.slice(0, 50)])));
+const ps = passages(pg, m.url);
+console.log("D passages", ps.length, JSON.stringify(ps.slice(0, 4).map((p) => [p.heading, p.text.slice(0, 60), p.words])));
+const i = edited.indexOf("<section><h2>How much"); console.log("D ctx", JSON.stringify(edited.slice(Math.max(0, i - 200), i + 80)));
