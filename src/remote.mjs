@@ -6,9 +6,9 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { setUrlGuard } from "./fetch.mjs";
-import { call, handleRpc, TOOLS } from "./mcp.mjs";
+import { call, handleRpc, present, TOOLS } from "./mcp.mjs";
 
-export { call, handleRpc, TOOLS };
+export { call, handleRpc, present, TOOLS };
 
 function privateIp(ip) {
   if (isIP(ip) === 4) {
