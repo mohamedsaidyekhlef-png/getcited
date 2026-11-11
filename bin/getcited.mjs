@@ -35,6 +35,10 @@ Commands
   getcited init <url> [--vs <url>...]     write a starter getcited.yml from your page
   getcited truth "<brand>" --fact "..."   what a model believes about you, checked against your facts
   getcited mcp                            run as an MCP server for Claude, Cursor, Codex, VS Code…
+  getcited index <run|collect|crawl|attribute|report> [index.json]
+                                          AI Answer Index: ask ChatGPT, Perplexity, Gemini and Claude your prompts,
+                                          store every answer and citation, trace answers to source passages,
+                                          share of voice, difficulty and placement opportunities
 
 Audit options
   --pages <n>      also audit n linked pages      --fix <dir>     draft fixes (llms.txt, JSON-LD, robots)
@@ -61,6 +65,7 @@ function die(msg, code = 1) { console.error(`getcited: ${msg}`); process.exit(co
 
 function parse(argv) {
   const a = { pages: 1, probeBots: true, quiet: false, pos: [], vs: [], facts: [] };
+  if (argv[0] === "index") return { cmd: "index", pos: argv.slice(1) };
   const COMMANDS = ["audit", "xray", "arena", "test", "init", "truth", "mcp", "diff", "bench"];
   if (COMMANDS.includes(argv[0])) a.cmd = argv.shift();
   else a.cmd = "audit";
@@ -114,6 +119,11 @@ const model = (spec) => { try { return resolveModel(spec, { base: a.baseUrl }); 
 const asSource = (ref, mine) => (existsSync(ref) && !/^https?:/i.test(ref) ? { file: ref, url: a.url && mine ? a.url : ref, mine } : { url: /^https?:\/\//i.test(ref) ? ref : "https://" + ref, mine });
 
 switch (a.cmd) {
+  case "index": {
+    const { main } = await import("../src/index/cli.mjs");
+    await main(a.pos);
+    break;
+  }
   case "audit": {
     const target = a.url || a.pos[0];
     if (!target && !a.file) { console.log(HELP); process.exit(1); }

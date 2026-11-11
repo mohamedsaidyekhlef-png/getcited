@@ -22,7 +22,7 @@
     "action.yml"
   ],
   "scripts": {
-    "test": "node --test test/audit.test.mjs test/v1.test.mjs"
+    "test": "node --test test/audit.test.mjs test/v1.test.mjs test/index.test.mjs"
   },
   "engines": {
     "node": ">=18"
