@@ -1,0 +1,46 @@
+name: Open Authority (Common Crawl web graph)
+# Builds domain authority and referring domains for the top domains of the web from
+# Common Crawl's open domain-level web graph, and publishes them as a GitHub Release
+# (256 gzip shards keyed by sha1(domain)[0:2], plus meta.json and targets.json).
+on:
+  workflow_dispatch:
+    inputs:
+      release: { description: "Common Crawl web graph release id", default: "cc-main-2026-may-jun-jul", required: true }
+      top: { description: "How many top domains to publish", default: "10000000", required: true }
+      targets: { description: "Domains to get full referring-domain lists for (comma-separated)", default: "scairos.com,settlementdecisions.com,peachtreefinancial.com,jgwentworth.com,annuity.org,drbcapital.com", required: false }
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      REL: ${{ github.event.inputs.release }}
+      OA_TARGETS: ${{ github.event.inputs.targets }}
+      OA_WORK: /mnt/oa-work
+      NODE_OPTIONS: --max-old-space-size=12000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: sudo apt-get install -y pigz >/dev/null && sudo mkdir -p /mnt/oa-work && sudo chown $USER /mnt/oa-work
+      - name: Ranks (harmonic centrality, PageRank)
+        run: curl -sf "https://data.commoncrawl.org/projects/hyperlinkgraph/$REL/domain/$REL-domain-ranks.txt.gz" | pigz -dc | node scripts/open-authority.mjs ranks ${{ github.event.inputs.top }}
+      - name: Vertices (graph ids)
+        run: curl -sf "https://data.commoncrawl.org/projects/hyperlinkgraph/$REL/domain/$REL-domain-vertices.txt.gz" | pigz -dc | node scripts/open-authority.mjs vertices
+      - name: Edges (referring domains, 2.8B links)
+        run: curl -sf "https://data.commoncrawl.org/projects/hyperlinkgraph/$REL/domain/$REL-domain-edges.txt.gz" | pigz -dc | node scripts/open-authority.mjs edges
+      - name: Referrer names
+        run: curl -sf "https://data.commoncrawl.org/projects/hyperlinkgraph/$REL/domain/$REL-domain-vertices.txt.gz" | pigz -dc | node scripts/open-authority.mjs names
+      - name: Shards
+        run: |
+          node scripts/open-authority.mjs shards /mnt/oa-out "$REL"
+          cd /mnt/oa-out && for f in ??.tsv; do gzip -9 "$f"; done
+          du -sh /mnt/oa-out; ls /mnt/oa-out | wc -l
+          node -e "const t=require('/mnt/oa-out/targets.json');for(const [d,v] of Object.entries(t))console.log(d, 'OA', v.self?.[1], 'rank', v.self?.[2], 'referring domains', v.referringDomains, 'top:', v.top.slice(0,8).map(x=>x.domain+'('+x.oa+')').join(' '))" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Publish release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          TAG="oa-$REL"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" --title "Open Authority · $REL" --notes "Domain authority (OA 0-100) and referring domains for the top ${{ github.event.inputs.top }} domains, computed from the Common Crawl $REL domain-level web graph. Shards: sha1(domain)[0:2].tsv.gz with columns domain, oa, harmonic_rank, pagerank_rank, referring_domains, hosts." /mnt/oa-out/meta.json /mnt/oa-out/targets.json /mnt/oa-out/*.tsv.gz
