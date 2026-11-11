@@ -3,5 +3,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 const c = new Client({ name: "probe", version: "1" });
 await c.connect(new StreamableHTTPClientTransport(new URL("https://getcited.scairos.com/mcp")));
 console.log("R tools " + (await c.listTools()).tools.map((t) => t.name).join(","));
-const a = await c.callTool({ name: "getcited_audit", arguments: { url: "settlementdecisions.com" } });
-console.log("R audit " + a.content[0].text.split("\n").slice(0, 2).join(" / "));
+const t0 = Date.now();
+const r = await c.callTool({ name: "getcited_site", arguments: { domain: "annuity.org", competitors: ["jgwentworth.com", "peachtreefinancial.com", "settlementdecisions.com", "nerdwallet.com"] } });
+console.log("R ms " + (Date.now() - t0));
+console.log("R " + r.content[0].text.replace(/\n/g, "\nR "));
