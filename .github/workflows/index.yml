@@ -1,0 +1,46 @@
+name: AI Answer Index
+# Weekly collection of real AI answers for the vertical in seeds/, with your own engine keys
+# (Settings → Secrets and variables → Actions): PERPLEXITY_API_KEY, OPENAI_API_KEY,
+# GEMINI_API_KEY, ANTHROPIC_API_KEY. Engines without a key are skipped. The index file is
+# cached between runs, so history, volatility and regressions accumulate.
+on:
+  workflow_dispatch:
+    inputs:
+      seed: { description: "Seed file in seeds/", default: "structured-settlements", required: false }
+      samples: { description: "Answers per prompt per engine", default: "2", required: false }
+  schedule:
+    - cron: "17 5 * * 1"
+permissions:
+  contents: read
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SEED: ${{ github.event.inputs.seed || 'structured-settlements' }}
+      PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Restore index
+        uses: actions/cache/restore@v4
+        with: { path: index-data, key: "answer-index-${{ env.SEED }}-${{ github.run_id }}", restore-keys: "answer-index-${{ env.SEED }}-" }
+      - name: Collect, crawl, attribute
+        run: |
+          if [ -z "$PERPLEXITY_API_KEY$OPENAI_API_KEY$GEMINI_API_KEY$ANTHROPIC_API_KEY" ]; then echo "::notice::No engine keys set as repository secrets; nothing to collect."; exit 0; fi
+          mkdir -p index-data
+          jq '.db = "'"$SEED"'.db"' "seeds/$SEED.json" > index-data/index.json
+          node bin/getcited.mjs index run index-data/index.json --samples "${{ github.event.inputs.samples || '2' }}" | tee index-data/report.txt
+          node bin/getcited.mjs index report index-data/index.json --json > index-data/report.json
+          { echo '```'; cat index-data/report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Save index
+        if: always()
+        uses: actions/cache/save@v4
+        with: { path: index-data, key: "answer-index-${{ env.SEED }}-${{ github.run_id }}" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "answer-index-${{ env.SEED }}", path: index-data, if-no-files-found: ignore }

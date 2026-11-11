@@ -71,8 +71,8 @@ function when(iso){try{return new Date(iso).toLocaleTimeString([],{hour:"2-digit
 function host(u){try{return new URL(u).host.replace(/^www\./,"")}catch(e){return u}}
 function shortUrl(u){try{var x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname).replace(/\/+$/,"")}catch(e){return u}}
 var WORD={pass:"Pass",warn:"Warning",fail:"Fail",info:"Note"};
-var TOOL={audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",fixkit:"getcited_fixkit"};
-var LABEL={audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",fixkit:"Fix kit"};
+var TOOL={live:"getcited_live",audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",fixkit:"getcited_fixkit"};
+var LABEL={live:"Live AI answers",audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",fixkit:"Fix kit"};
 
 // Host bridge: MCP Apps (Claude, VS Code…) and the ChatGPT Apps SDK.
 var nextId=1,pending={};
@@ -234,11 +234,27 @@ function fixkit(d){
   return h;
 }
 
+function liveView(d){
+  var me=d.shareOfVoice.filter(function(s){return s.own})[0];
+  var h=header({kind:"live",measuredAt:d.measuredAt},d.collected+" real answers · "+d.engines.join(", "));
+  var share=me&&me.of?Math.round(me.mentioned/me.of*100):0;
+  h+='<div class="kpis">'+gauge(share,share+"%","named")+'<div style="min-width:0"><div class="verdict">'+(me?esc(me.brand)+' named in '+me.mentioned+' of '+me.of+' real answers':'Real answers')+'</div><div class="meta num">'+esc(d.engines.join(", "))+' · market '+esc(d.market)+' · cost $'+d.costUsd+'</div><div style="margin-top:10px">'+
+  d.shareOfVoice.map(function(s){var v=s.of?s.mentioned/s.of:0;return '<div class="share"><span class="n'+(s.own?" me":"")+'">'+esc(s.brand)+(s.own?" · you":"")+'</span><span class="sbar"><span class="track"><i style="width:'+Math.max(2,Math.round(v*100))+'%;background:'+(s.own?"var(--brand)":"var(--mute)")+'"></i></span><b class="num">'+s.mentioned+'/'+s.of+'</b></span></div>'}).join("")+'</div></div></div>';
+  h+=tabs([
+    {id:"src",label:"Cited sources",count:d.sources.length,html:function(){return '<table><thead><tr><th>Source</th><th>Type</th><th class="r">Citations</th><th class="r hide-sm">Engines</th></tr></thead><tbody>'+d.sources.map(function(x){return '<tr><td><b>'+esc(x.domain)+'</b></td><td><span class="pill '+(x.type==="own"?"pass":x.type==="competitor"?"fail":"info")+'">'+esc(x.type)+'</span></td><td class="r num">'+x.citations+'</td><td class="r num hide-sm">'+x.engines+'</td></tr>'}).join("")+'</tbody></table>'}},
+    {id:"why",label:"Why they win",count:d.winners.length,html:function(){return d.winners.length?'<table><tbody>'+d.winners.map(function(w){var p=w.passages[0];return '<tr><td><b>'+esc(w.domain)+'</b> <span class="dim sm">'+esc(w.type)+' · '+w.n+' citations</span><blockquote>'+(p.heading?'<b>'+esc(p.heading)+'</b>: ':'')+esc(p.text)+'</blockquote></td></tr>'}).join("")+'</tbody></table>':'<p class="dim" style="padding:10px 0">The cited pages could not be read.</p>'}},
+    {id:"place",label:"Where to get placed",count:d.opportunities.length,html:function(){return d.opportunities.length?'<table><tbody>'+d.opportunities.map(function(o){return '<tr><td><a href="#" data-open="'+esc(o.url)+'" style="color:var(--ink);font-weight:600">'+esc(o.domain)+'</a><div class="dim sm" style="word-break:break-all">'+esc(o.url)+'</div></td><td><span class="pill info">'+esc(o.type)+'</span></td><td class="r num">'+o.answers+' answers</td></tr>'}).join("")+'</tbody></table>':'<p class="dim" style="padding:10px 0">No gaps: no answer named a competitor without you.</p>'}},
+    {id:"ans",label:"The answers",count:d.answers.length,html:function(){return '<table><tbody>'+d.answers.map(function(a){return '<tr><td><b>'+esc(a.engine)+'</b> <span class="dim sm">'+esc(a.prompt)+'</span><div class="sm" style="margin-top:4px">Names: '+esc(a.named.join(", ")||"none of the tracked brands")+(a.newNames.length?' · also '+esc(a.newNames.join(", ")):'')+'</div><blockquote>'+esc(a.excerpt)+'</blockquote></td></tr>'}).join("")+'</tbody></table>'}}
+  ]);
+  h+=footer({measuredAt:d.measuredAt},'');
+  return h;
+}
+
 function render(d){
   if(!d||typeof d!=="object")return;
   state.data=d;
   if(d.kind==="error"||d.error){root.innerHTML='<div class="app"><div class="bar"><span class="brand">'+LOGO+'<span>get<i>cited</i></span></span></div><div class="err">'+esc(d.error)+'</div></div>';size();return}
-  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="simulate"?simulate(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
+  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="live"?liveView(d):d.kind==="simulate"?simulate(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
   size();
 }
 document.addEventListener("click",function(e){

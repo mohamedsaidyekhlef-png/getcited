@@ -13,6 +13,7 @@ import { resolveModel } from "./llm.mjs";
 import { toJson } from "./report.mjs";
 import { auditCard, auditMarkdown, xrayCard, xrayMarkdown, arenaCard, arenaMarkdown, simulateCard, simulateMarkdown, fixkitCard, fixkitMarkdown } from "./present.mjs";
 import { simulate } from "./simulate.mjs";
+import { live, liveMarkdown, liveEngines } from "./live.mjs";
 import { buildFixes } from "./fix.mjs";
 import { WIDGET_HTML, WIDGET_URI, WIDGET_URI_OPENAI } from "./widget.mjs";
 
@@ -46,6 +47,19 @@ export const TOOLS = [
     inputSchema: { type: "object", properties: { question: { type: "string", description: "The question a buyer would ask an AI assistant" }, mine: { type: "string", description: "URL of your page" }, competitors: { type: "array", items: { type: "string" }, description: "Competitor page URLs (up to 6). If the user names none, pick the pages that rank for the question." }, k: { type: "integer", default: 5 }, model: { type: "string", description: "Optional provider:model for live answers, e.g. openai:gpt-4.1-mini" } }, required: ["question", "mine"] },
   },
   {
+    name: "getcited_live",
+    title: "Ask the real AI engines",
+    annotations: { title: "Live AI answers", readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    _meta: { ...UI_META, "openai/toolInvocation/invoking": "Asking ChatGPT, Perplexity, Gemini and Claude…", "openai/toolInvocation/invoked": "Real answers in" },
+    description: "Ask the real answer engines (Perplexity, ChatGPT web search, Gemini with Google Search, Claude web search) up to 5 buyer questions right now. Returns who each engine named and in what order, every URL it cited with its type (competitor, forum, video, news, list, government), the exact passage on the cited page each answer was built from, and the third-party pages to get placed on. These are real answers, not a simulation. Each call costs a few cents of engine API usage.",
+    inputSchema: { type: "object", properties: {
+      prompts: { type: "array", items: { type: "string" }, description: "1 to 5 questions a buyer would ask an AI assistant, in the buyer's words" },
+      brand: { type: "object", properties: { name: { type: "string" }, domain: { type: "string" } }, description: "The user's brand and domain" },
+      competitors: { type: "array", items: { type: "object", properties: { name: { type: "string" }, domain: { type: "string" } } }, description: "Competitors to track (name and domain)" },
+      engines: { type: "array", items: { type: "string", enum: ["perplexity", "openai", "gemini", "anthropic"] }, description: "Defaults to every engine with a configured key" },
+    }, required: ["prompts", "brand"] },
+  },
+  {
     name: "getcited_simulate",
     title: "Test a rewrite before you publish it",
     annotations: { title: "Rewrite simulator", ...READ },
@@ -77,6 +91,7 @@ export async function present(name, a, opts = {}) {
   if (name === "getcited_audit") { const c = auditCard(out); return { data: c, text: auditMarkdown(c) }; }
   if (name === "getcited_xray") { const c = xrayCard(out.url, out, out.fetched); return { data: c, text: xrayMarkdown(c) }; }
   if (name === "getcited_arena") { const c = arenaCard(out); return { data: c, text: arenaMarkdown(c) }; }
+  if (name === "getcited_live") return { data: { kind: "live", ...out }, text: liveMarkdown(out) };
   if (name === "getcited_simulate") { const c = simulateCard(out); return { data: c, text: simulateMarkdown(c) }; }
   if (name === "getcited_fixkit") { const c = fixkitCard(out.url, out.files, out.at); return { data: c, text: fixkitMarkdown(c) }; }
   return { data: out, text: JSON.stringify(out, null, 2) };
@@ -107,6 +122,7 @@ export async function call(name, a, { hosted = false } = {}) {
     const r = await arena(a.question, [{ url: a.mine, mine: true }, ...(a.competitors || []).map((url) => ({ url }))], { k: a.k || 5, llm: a.model ? resolveModel(a.model) : undefined });
     return r;
   }
+  if (name === "getcited_live") return live({ prompts: a.prompts || [], brand: a.brand, competitors: (a.competitors || []).slice(0, 10), engines: a.engines });
   if (name === "getcited_simulate") return simulate({ question: a.question, mine: a.mine, competitors: (a.competitors || []).slice(0, 6), passage: String(a.passage || "").slice(0, 6000), heading: a.heading, k: 5 });
   if (name === "getcited_fixkit") { const r = await audit(a.url, { pages: 1, probeBots: false }); if (r.error) return { error: r.error }; return { url: r.url, at: r.auditedAt, files: buildFixes(r) }; }
   if (name === "getcited_truth") return truth({ brand: a.brand, facts: a.facts, site: a.site, llm: resolveModel(a.model) });
@@ -122,7 +138,7 @@ export async function handleRpc(msg, { version = "1.2.0", hosted = false } = {})
   try {
     if (method === "initialize") return ok({ protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: {}, resources: {}, prompts: {} }, serverInfo: { name: "getcited", title: "getcited", version, description: "Unit tests for AI search: see whether ChatGPT, Perplexity, Claude and Google AI can reach, read and cite a page.", icons: ICONS, websiteUrl: "https://www.scairos.com/getcited" }, instructions: "getcited measures pages live, at call time. Use getcited_audit to check whether AI engines can reach and quote a page, getcited_xray to see which sentences an AI would quote, and getcited_arena to see who an AI answer engine would cite for a question and why. Each result already includes a readable report and an interactive card; summarize the verdict and the top fixes in your own words rather than repeating every number, and quote the evidence when the user asks if a result is real. Work like an expert: when a page loses a question, draft a passage from facts already on the user's page and prove it with getcited_simulate before recommending it (revise until it wins, at most 3 rounds); when the user wants to implement fixes, use getcited_fixkit for the code. Never invent figures, quotes, authors or dates for the user's page." });
     if (method === "ping") return ok({});
-    if (method === "tools/list") return ok({ tools: hosted ? TOOLS.filter((t) => t.name !== "getcited_truth").map((t) => ({ ...t, inputSchema: { ...t.inputSchema, properties: Object.fromEntries(Object.entries(t.inputSchema.properties).filter(([k]) => k !== "model")) } })) : TOOLS });
+    if (method === "tools/list") return ok({ tools: hosted ? TOOLS.filter((t) => t.name !== "getcited_truth" && (t.name !== "getcited_live" || liveEngines().length)).map((t) => ({ ...t, inputSchema: { ...t.inputSchema, properties: Object.fromEntries(Object.entries(t.inputSchema.properties).filter(([k]) => k !== "model")) } })) : TOOLS });
     if (method === "tools/call") {
       try {
         const { data, text } = await present(params?.name, params?.arguments || {}, { hosted });

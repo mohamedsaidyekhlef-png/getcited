@@ -137,7 +137,7 @@ test("MCP server: initialize, list tools, call the X-ray", async () => {
     assert.equal((await next()).result.serverInfo.name, "getcited");
     send({ method: "notifications/initialized" });
     send({ id: 2, method: "tools/list" });
-    assert.deepEqual((await next()).result.tools.map((t) => t.name), ["getcited_audit", "getcited_xray", "getcited_arena", "getcited_simulate", "getcited_fixkit", "getcited_truth"]);
+    assert.deepEqual((await next()).result.tools.map((t) => t.name), ["getcited_audit", "getcited_xray", "getcited_arena", "getcited_live", "getcited_simulate", "getcited_fixkit", "getcited_truth"]);
     send({ id: 3, method: "tools/call", params: { name: "getcited_xray", arguments: { url: s.url } } });
     const out = await next();
     assert.equal(out.result.isError, false);

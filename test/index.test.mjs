@@ -124,3 +124,29 @@ test("engine adapters parse each provider's documented response shape", async ()
   assert.equal(an.citations[0].support, "There is hereby imposed a tax equal to 40 percent");
   assert.equal(an.answer.slice(an.citations[0].spanStart, an.citations[0].spanEnd), "a 40% excise tax applies.");
 });
+
+test("live: real-engine flow end to end (Perplexity API and pages faked at the network layer)", async () => {
+  const { live, liveMarkdown } = await import("../src/live.mjs");
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const u = String(url);
+    if (u.startsWith("https://api.perplexity.ai/")) return new Response(JSON.stringify({ output: [
+      { type: "search_results", results: [{ id: 1, url: "https://www.peachtreefinancial.com/cost?utm_source=x", title: "Cost" }, { id: 2, url: "https://www.reddit.com/r/personalfinance/comments/abc", title: "Sold mine" }] },
+      { type: "message", content: [{ type: "output_text", text: "Court fees for selling a structured settlement usually range from $100 to $500 [1]. Peachtree Financial is a large buyer. One seller said the judge approved it after about 60 days [2]." }] }],
+      usage: { input_tokens: 500, output_tokens: 120 } }), { status: 200 });
+    const page = Object.keys(PAGES).find((k) => canonUrl(k) === canonUrl(u));
+    if (page) return new Response(html(PAGES[page]), { status: 200, headers: { "content-type": "text/html" } });
+    return new Response("nope", { status: 404 });
+  };
+  try {
+    const r = await live({ prompts: ["How much does it cost to sell a structured settlement?"], brand: { name: "SettlementDecisions", domain: "settlementdecisions.com" }, competitors: [{ name: "Peachtree Financial", domain: "peachtreefinancial.com" }], env: { PERPLEXITY_API_KEY: "test" } });
+    assert.equal(r.collected, 1);
+    assert.deepEqual(r.answers[0].named, ["Peachtree Financial"]);
+    assert.ok(r.sources.some((d) => d.domain === "reddit.com" && d.type === "forum"));
+    assert.ok(r.winners.length && r.winners[0].passages[0].text.includes("$100"));
+    assert.ok(r.opportunities.some((o) => o.domain === "reddit.com"));
+    assert.match(liveMarkdown(r), /Where to get placed/);
+    const none = await live({ prompts: ["q"], brand: { name: "x" }, env: {} });
+    assert.match(none.error, /No answer-engine API key/);
+  } finally { globalThis.fetch = real; }
+});
