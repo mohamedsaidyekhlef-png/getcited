@@ -150,3 +150,30 @@ test("live: real-engine flow end to end (Perplexity API and pages faked at the n
     assert.match(none.error, /No answer-engine API key/);
   } finally { globalThis.fetch = real; }
 });
+
+test("authority: Site Explorer reads Open Authority shards (local mirror of the release)", async () => {
+  const { createServer } = await import("node:http");
+  const { createHash } = await import("node:crypto");
+  const { gzipSync } = await import("node:zlib");
+  const rows = [["settlementdecisions.com", 41, 4100000, 3900000, 312, 2], ["peachtreefinancial.com", 52, 900000, 850000, 1840, 3], ["reddit.com", 97, 12, 9, 2400000, 900]];
+  const files = { "/meta.json": JSON.stringify({ release: "cc-test", domainsInGraph: 118000000, builtAt: "2026-11-11T00:00:00Z", formula: "OA = …" }), "/targets.json": JSON.stringify({ "settlementdecisions.com": { referringDomains: 312, byOA: [{ min: 90, max: 100, count: 1 }], top: [{ domain: "reddit.com", oa: 97 }] } }) };
+  for (const r of rows) {
+    const id = createHash("sha1").update(r[0]).digest("hex").slice(0, 2);
+    files[`/${id}.tsv.gz`] = Buffer.concat([files[`/${id}.tsv.gz`] ? Buffer.from("") : Buffer.from(""), gzipSync((files[`/${id}.raw`] = (files[`/${id}.raw`] || "") + r.join("\t") + "\n"))]);
+  }
+  const srv = createServer((q, s) => { const b = files[q.url]; if (b == null) { s.statusCode = 404; return s.end(); } s.end(b); });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  process.env.GETCITED_OA_BASE = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const { siteExplorer, siteMarkdown, lookup } = await import("../src/authority.mjs");
+    const r = await siteExplorer("https://www.SettlementDecisions.com/path", ["peachtreefinancial.com", "nowhere-xyz.com"]);
+    assert.equal(r.you.oa, 41);
+    assert.equal(r.you.referringDomains, 312);
+    assert.equal(r.competitors[0].oa, 52);
+    assert.equal(r.competitors[1].oa, null);
+    assert.equal(r.referring.top[0].domain, "reddit.com");
+    assert.match(siteMarkdown(r), /Open Authority 41\/100/);
+    const sub = await lookup(["old.reddit.com"]);
+    assert.equal(sub[0].via, "reddit.com");
+  } finally { srv.close(); delete process.env.GETCITED_OA_BASE; }
+});

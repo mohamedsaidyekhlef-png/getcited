@@ -71,8 +71,8 @@ function when(iso){try{return new Date(iso).toLocaleTimeString([],{hour:"2-digit
 function host(u){try{return new URL(u).host.replace(/^www\./,"")}catch(e){return u}}
 function shortUrl(u){try{var x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname).replace(/\/+$/,"")}catch(e){return u}}
 var WORD={pass:"Pass",warn:"Warning",fail:"Fail",info:"Note"};
-var TOOL={live:"getcited_live",audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",fixkit:"getcited_fixkit"};
-var LABEL={live:"Live AI answers",audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",fixkit:"Fix kit"};
+var TOOL={site:"getcited_site",live:"getcited_live",audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",fixkit:"getcited_fixkit"};
+var LABEL={site:"Site Explorer",live:"Live AI answers",audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",fixkit:"Fix kit"};
 
 // Host bridge: MCP Apps (Claude, VS Code…) and the ChatGPT Apps SDK.
 var nextId=1,pending={};
@@ -234,6 +234,18 @@ function fixkit(d){
   return h;
 }
 
+function siteView(d){
+  var y=d.you,all=[y].concat(d.competitors||[]);var n=function(x){return x==null?"–":Number(x).toLocaleString()};
+  var h=header({kind:"site",url:"https://"+d.domain,measuredAt:d.builtAt},d.domain);
+  h+='<div class="kpis">'+gauge(y.oa||0,y.oa==null?"–":y.oa,"authority")+'<div style="min-width:0"><div class="verdict num">'+(y.oa==null?esc(d.domain)+" is not in the published top domains":n(y.referringDomains)+" referring domains · rank #"+n(y.harmonicRank))+'</div><div class="meta">Common Crawl web graph '+esc(d.release)+' · '+n(d.domainsInGraph)+' domains · open data</div><div style="margin-top:10px">'+
+  all.map(function(c){return '<div class="share"><span class="n'+(c===y?" me":"")+'">'+esc(c.domain)+(c===y?" · you":"")+'</span><span class="sbar"><span class="track"><i style="width:'+Math.max(2,c.oa||0)+'%;background:'+(c===y?"var(--brand)":"var(--mute)")+'"></i></span><b class="num">'+(c.oa==null?"–":c.oa)+'</b></span></div>'}).join("")+'</div></div></div>';
+  var tl=[{id:"cmp",label:"Comparison",count:all.length,html:function(){return '<table><thead><tr><th>Domain</th><th class="r">OA</th><th class="r">Rank</th><th class="r">Ref. domains</th><th class="r hide-sm">PageRank #</th></tr></thead><tbody>'+all.map(function(c){return '<tr><td><b'+(c===y?' style="color:var(--brand)"':'')+'>'+esc(c.domain)+'</b></td><td class="r num"><b>'+(c.oa==null?"–":c.oa)+'</b></td><td class="r num">'+(c.harmonicRank?"#"+n(c.harmonicRank):"–")+'</td><td class="r num">'+n(c.referringDomains)+'</td><td class="r num hide-sm">'+(c.pagerankRank?"#"+n(c.pagerankRank):"–")+'</td></tr>'}).join("")+'</tbody></table>'}}];
+  if(d.referring)tl.push({id:"refs",label:"Referring domains",count:d.referring.total,html:function(){return '<table><thead><tr><th>Referring domain</th><th class="r">OA</th></tr></thead><tbody>'+d.referring.top.map(function(x){return '<tr><td><a href="#" data-open="https://'+esc(x.domain)+'" style="color:var(--ink)">'+esc(x.domain)+'</a></td><td class="r num">'+x.oa+'</td></tr>'}).join("")+'</tbody></table>'}});
+  h+=tabs(tl);
+  h+=footer({measuredAt:d.builtAt},'<button class="btn" data-act="audit" data-url="https://'+esc(d.domain)+'">Audit the site</button>');
+  return h;
+}
+
 function liveView(d){
   var me=d.shareOfVoice.filter(function(s){return s.own})[0];
   var h=header({kind:"live",measuredAt:d.measuredAt},d.collected+" real answers · "+d.engines.join(", "));
@@ -254,7 +266,7 @@ function render(d){
   if(!d||typeof d!=="object")return;
   state.data=d;
   if(d.kind==="error"||d.error){root.innerHTML='<div class="app"><div class="bar"><span class="brand">'+LOGO+'<span>get<i>cited</i></span></span></div><div class="err">'+esc(d.error)+'</div></div>';size();return}
-  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="live"?liveView(d):d.kind==="simulate"?simulate(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
+  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="live"?liveView(d):d.kind==="site"?siteView(d):d.kind==="simulate"?simulate(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
   size();
 }
 document.addEventListener("click",function(e){

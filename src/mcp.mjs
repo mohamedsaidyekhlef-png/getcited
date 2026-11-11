@@ -14,6 +14,7 @@ import { toJson } from "./report.mjs";
 import { auditCard, auditMarkdown, xrayCard, xrayMarkdown, arenaCard, arenaMarkdown, simulateCard, simulateMarkdown, fixkitCard, fixkitMarkdown } from "./present.mjs";
 import { simulate } from "./simulate.mjs";
 import { live, liveMarkdown, liveEngines } from "./live.mjs";
+import { siteExplorer, siteMarkdown } from "./authority.mjs";
 import { buildFixes } from "./fix.mjs";
 import { WIDGET_HTML, WIDGET_URI, WIDGET_URI_OPENAI } from "./widget.mjs";
 
@@ -45,6 +46,14 @@ export const TOOLS = [
     _meta: { ...UI_META, "openai/toolInvocation/invoking": "Fetching the pages and ranking passages…", "openai/toolInvocation/invoked": "Arena ready" },
     description: "Simulate who an AI answer engine would cite for a question: chunks your page and competitor pages, fans out the query, ranks passages, and returns citation share per source, the winning passages and what your page is missing. Offline and deterministic unless a model is given.",
     inputSchema: { type: "object", properties: { question: { type: "string", description: "The question a buyer would ask an AI assistant" }, mine: { type: "string", description: "URL of your page" }, competitors: { type: "array", items: { type: "string" }, description: "Competitor page URLs (up to 6). If the user names none, pick the pages that rank for the question." }, k: { type: "integer", default: 5 }, model: { type: "string", description: "Optional provider:model for live answers, e.g. openai:gpt-4.1-mini" } }, required: ["question", "mine"] },
+  },
+  {
+    name: "getcited_site",
+    title: "Site Explorer: authority and referring domains",
+    annotations: { title: "Site Explorer", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    _meta: { ...UI_META, "openai/toolInvocation/invoking": "Looking up the open web graph…", "openai/toolInvocation/invoked": "Site Explorer ready" },
+    description: "Domain authority and backlinks from open data: Open Authority (0-100), rank among all domains on the web by harmonic centrality and PageRank, and the number of referring domains, computed from Common Crawl's web graph (118M domains, 2.8B links). Compare a domain with competitors; for tracked domains, also lists the strongest referring domains.",
+    inputSchema: { type: "object", properties: { domain: { type: "string", description: "Domain to explore, e.g. example.com" }, competitors: { type: "array", items: { type: "string" }, description: "Competitor domains to compare (up to 10)" } }, required: ["domain"] },
   },
   {
     name: "getcited_live",
@@ -91,6 +100,7 @@ export async function present(name, a, opts = {}) {
   if (name === "getcited_audit") { const c = auditCard(out); return { data: c, text: auditMarkdown(c) }; }
   if (name === "getcited_xray") { const c = xrayCard(out.url, out, out.fetched); return { data: c, text: xrayMarkdown(c) }; }
   if (name === "getcited_arena") { const c = arenaCard(out); return { data: c, text: arenaMarkdown(c) }; }
+  if (name === "getcited_site") return { data: out, text: siteMarkdown(out) };
   if (name === "getcited_live") return { data: { kind: "live", ...out }, text: liveMarkdown(out) };
   if (name === "getcited_simulate") { const c = simulateCard(out); return { data: c, text: simulateMarkdown(c) }; }
   if (name === "getcited_fixkit") { const c = fixkitCard(out.url, out.files, out.at); return { data: c, text: fixkitMarkdown(c) }; }
@@ -122,6 +132,7 @@ export async function call(name, a, { hosted = false } = {}) {
     const r = await arena(a.question, [{ url: a.mine, mine: true }, ...(a.competitors || []).map((url) => ({ url }))], { k: a.k || 5, llm: a.model ? resolveModel(a.model) : undefined });
     return r;
   }
+  if (name === "getcited_site") return siteExplorer(a.domain, a.competitors || []);
   if (name === "getcited_live") return live({ prompts: a.prompts || [], brand: a.brand, competitors: (a.competitors || []).slice(0, 10), engines: a.engines });
   if (name === "getcited_simulate") return simulate({ question: a.question, mine: a.mine, competitors: (a.competitors || []).slice(0, 6), passage: String(a.passage || "").slice(0, 6000), heading: a.heading, k: 5 });
   if (name === "getcited_fixkit") { const r = await audit(a.url, { pages: 1, probeBots: false }); if (r.error) return { error: r.error }; return { url: r.url, at: r.auditedAt, files: buildFixes(r) }; }
