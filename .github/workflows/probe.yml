@@ -4,7 +4,13 @@ jobs:
   p:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - run: cd probe && npm init -y >/dev/null && npm i @modelcontextprotocol/sdk >/dev/null && node p.mjs
+      - shell: bash {0}
+        run: |
+          B=https://data.commoncrawl.org/projects/hyperlinkgraph/cc-main-2026-may-jun-jul/domain/cc-main-2026-may-jun-jul-domain
+          echo "== ranks head"; curl -s $B-ranks.txt.gz | zcat | head -5
+          echo "== vertices head"; curl -s $B-vertices.txt.gz | zcat | head -3
+          echo "== edges head"; curl -s $B-edges.txt.gz | zcat | head -3
+          echo "== stats"; curl -s $B.stats
+          echo "== vertices for targets"; curl -s $B-vertices.txt.gz | zcat | grep -P "\t(com\.settlementdecisions|com\.peachtreefinancial|com\.jgwentworth|com\.scairos)\t"
+          echo "== ranks stream"; S=$(date +%s); curl -s $B-ranks.txt.gz | zcat | grep -P "\t(com\.settlementdecisions|com\.peachtreefinancial|com\.jgwentworth|com\.scairos|com\.ahrefs)\t"; echo "secs $(( $(date +%s)-S ))"
+          nproc; free -g; df -h / | tail -1
