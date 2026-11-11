@@ -4,7 +4,8 @@ jobs:
   p:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - run: cd probe && npm init -y >/dev/null && npm i @modelcontextprotocol/sdk >/dev/null && node p.mjs
+      - shell: bash {0}
+        run: |
+          echo "R site $(curl -s -m 30 -X POST -H 'content-type: application/json' -d '{"domain":"jgwentworth.com","competitors":["peachtreefinancial.com"]}' 'https://www.scairos.com/api/getcited/v1/site?view=card' | head -c 400)"
+          echo "R audit $(curl -s -m 60 -X POST -H 'content-type: application/json' -d '{"url":"https://jgwentworth.com"}' 'https://www.scairos.com/api/getcited/v1/audit?view=card' | head -c 300)"
+          echo "R page $(curl -s https://www.scairos.com/getcited | grep -o 'See any domain the way' | head -1)"
