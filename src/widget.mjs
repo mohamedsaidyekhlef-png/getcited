@@ -54,6 +54,8 @@ pre{margin:4px 0 0;background:var(--panel);border:1px solid var(--line);border-r
 .sbar{display:flex;align-items:center;gap:8px}.sbar .track{flex:1;height:8px;margin:0}.sbar b{width:38px;text-align:right}
 blockquote{margin:8px 0 0;padding:8px 12px;border-left:3px solid var(--brand);background:var(--sunk);border-radius:0 8px 8px 0;color:var(--ink2)}
 .skel{height:12px;border-radius:5px;background:var(--line);margin:10px 14px;animation:pl 1.2s infinite}@keyframes pl{50%{opacity:.45}}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px}.ans{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--sunk);min-width:0}.ans.a{border-color:var(--brand);background:var(--panel)}.ans .ah{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px}.ans p{margin:0;color:var(--ink2)}.ans .mine{background:var(--brandSoft);color:var(--ink);border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 2px}.ans sup{font-size:9.5px;font-weight:700;color:var(--mute);margin-left:1px}.srcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.srcs span{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:1px 6px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.srcs span b{margin-right:4px;color:var(--ink2)}.srcs span.me{color:var(--brand);border-color:var(--brand)}
+@media (max-width:520px){.vs{grid-template-columns:1fr}}
 .err{padding:14px;color:var(--fail);font-weight:600}
 .inp{display:block;width:100%;margin:3px 0 8px;font:inherit;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:7px 9px}textarea.inp{resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
 .toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12px;font-weight:600;border-radius:8px;padding:6px 12px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
@@ -71,8 +73,8 @@ function when(iso){try{return new Date(iso).toLocaleTimeString([],{hour:"2-digit
 function host(u){try{return new URL(u).host.replace(/^www\./,"")}catch(e){return u}}
 function shortUrl(u){try{var x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname).replace(/\/+$/,"")}catch(e){return u}}
 var WORD={pass:"Pass",warn:"Warning",fail:"Fail",info:"Note"};
-var TOOL={site:"getcited_site",live:"getcited_live",audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",fixkit:"getcited_fixkit"};
-var LABEL={site:"Site Explorer",live:"Live AI answers",audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",fixkit:"Fix kit"};
+var TOOL={site:"getcited_site",live:"getcited_live",audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",takeover:"getcited_takeover",fixkit:"getcited_fixkit"};
+var LABEL={site:"Site Explorer",live:"Live AI answers",audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",takeover:"Takeover",fixkit:"Fix kit"};
 
 // Host bridge: MCP Apps (Claude, VS Code…) and the ChatGPT Apps SDK.
 var nextId=1,pending={};
@@ -83,8 +85,8 @@ var oa=function(){return window.openai||null};
 function openLink(url){if(oa()&&oa().openExternal){try{oa().openExternal({href:url});return}catch(e){}}request("ui/open-link",{url:url}).catch(function(){window.open(url,"_blank","noopener")})}
 function ask(text){if(oa()&&oa().sendFollowUpMessage){oa().sendFollowUpMessage({prompt:text});toast("Sent to the chat");return}request("ui/message",{role:"user",content:[{type:"text",text:text}]}).then(function(){toast("Sent to the chat")}).catch(function(){copy(text,"Prompt copied: paste it in the chat")})}
 function rerun(){
-  var d=state.data;if(!d)return;var name=TOOL[d.kind];var args=state.input||(d.kind==="arena"||d.kind==="simulate"?null:{url:d.url});
-  if(!args){if(d.kind==="simulate"){toast("Ask in the chat to test a revised passage");return}state.form=true;render(d);return}
+  var d=state.data;if(!d)return;var name=TOOL[d.kind];var args=state.input||(d.kind==="arena"||d.kind==="simulate"||d.kind==="takeover"?null:{url:d.url});
+  if(!args){if(d.kind==="simulate"||d.kind==="takeover"){toast("Ask in the chat to test a revised passage");return}state.form=true;render(d);return}
   root.querySelector(".kpis,.pane")&&(root.querySelector(".pane").style.opacity=".5");toast("Re-running live…");
   var p=oa()&&oa().callTool?oa().callTool(name,args):request("tools/call",{name:name,arguments:args},120000);
   Promise.resolve(p).then(function(r){var sc=r&&(r.structuredContent||r);if(sc&&sc.kind)render(sc);else throw 0}).catch(function(){var a=root.querySelector(".pane");if(a)a.style.opacity="";toast("This app can't run tools here. Ask in the chat instead.")});
@@ -225,6 +227,27 @@ function simulate(d){
   h+=footer(d,'<button class="btn p" data-copy="'+esc((d.heading?d.heading+"\n\n":"")+d.passage)+'">'+I.copy+'Copy the tested passage</button><button class="btn" data-act="audit">Audit my page</button>');
   return h;
 }
+function answerBlock(ans,title,cls){
+  if(!ans||!ans.sentences.length)return '<div class="ans '+cls+'"><div class="ah">'+esc(title)+'</div><p class="dim sm">No passage from your page reaches the engine.</p></div>';
+  return '<div class="ans '+cls+'"><div class="ah">'+esc(title)+'</div><p>'+ans.sentences.map(function(x){return '<span class="'+(x.mine?"mine":"")+'">'+esc(x.text)+'</span><sup>'+x.cite+'</sup>'}).join(" ")+'</p><div class="srcs">'+ans.sources.map(function(x,i){return '<span class="'+(x.mine?"me":"")+'"><b>'+(i+1)+'</b>'+esc(x.label)+(x.mine?" · you":"")+'</span>'}).join("")+'</div></div>';
+}
+function takeoverView(d){
+  var b=d.before,a=d.after,h=header(d,"“"+d.question+"”");
+  var verdict=!a?"Nothing on your page answers this yet":b.leads&&b.rank===1?"You already hold this answer":a.won?"Takeover found: #"+(b.rank||"–")+" → #1":"Closer: #"+(b.rank||"–")+" → #"+(a.rank||"–");
+  var sa=a?Math.round(a.share*100):0;
+  h+='<div class="kpis">'+gauge(sa,sa+"%","after")+'<div style="min-width:0"><div class="verdict">'+esc(verdict)+'</div><div class="meta num">Citation share '+pct(b.share)+(a?' → <b style="color:var(--'+(a.share>b.share?"pass":"fail")+')">'+pct(a.share)+'</b>':'')+' · '+d.tried.length+' shapes tested'+(d.winner?' · every sentence already on your page':'')+' · nothing published</div></div></div>';
+  h+='<div class="vs">'+answerBlock(b.answer,"The answer today","b")+(a?answerBlock(a.answer,"The answer with your passage","a"):'')+'</div><p class="sm dim" style="margin:0;padding:0 14px 10px">Assembled from the top passages by getcited\'s open retriever. A real engine\'s wording will differ.</p>';
+  var o=d.offsite||{},tl=[];
+  if(d.winner)tl.push({id:"passage",label:"The passage",count:d.winner.sentences.length,html:function(){return '<p class="sm dim" style="margin:8px 0 4px">'+esc(d.winner.shape)+': '+esc(d.winner.note)+' Heading: “'+esc(d.question)+'”.</p><pre>'+esc(d.winner.passage)+'</pre><table style="margin-top:6px"><tbody>'+d.tried.map(function(t){return '<tr><td>'+esc(t.shape)+(t.shape===d.winner.shape?' <span class="pill pass">picked</span>':'')+'</td><td class="r num">#'+(t.rank||"–")+'</td><td class="r num">'+pct(t.share)+'</td></tr>'}).join("")+'</tbody></table>'}});
+  if(d.template&&d.template.length)tl.push({id:"tpl",label:"Facts you need",count:d.template.length,html:function(){return '<p class="sm dim" style="margin:8px 0 4px">What the winning passage says that your page doesn\'t. Supply your own real figures.</p><table><tbody>'+d.template.map(function(t){return '<tr><td>'+esc(t)+'</td></tr>'}).join("")+'</tbody></table>'}});
+  if(o.authority&&o.authority.length)tl.push({id:"auth",label:"Authority",count:o.authority.length,html:function(){return '<table><thead><tr><th>Domain</th><th class="r">OA</th><th class="r">Ref. domains</th></tr></thead><tbody>'+o.authority.map(function(x,i){return '<tr><td><b'+(i===0?' style="color:var(--brand)"':'')+'>'+esc(x.domain)+(i===0?" · you":"")+'</b></td><td class="r num">'+(x.oa==null?"–":x.oa)+'</td><td class="r num">'+(x.referringDomains==null?"–":Number(x.referringDomains).toLocaleString())+'</td></tr>'}).join("")+'</tbody></table><p class="sm dim">Open Authority from Common Crawl\'s web graph.</p>'}});
+  if(o.linkGap&&o.linkGap.domains.length)tl.push({id:"gap",label:"Link gap",count:o.linkGap.domains.length,html:function(){return '<p class="sm dim" style="margin:8px 0 4px">Sites that link to '+esc(o.linkGap.winner)+' but not to you.</p><table><tbody>'+o.linkGap.domains.map(function(x){return '<tr><td><a href="#" data-open="https://'+esc(x.domain)+'" style="color:var(--ink)">'+esc(x.domain)+'</a></td><td class="r num">'+x.oa+'</td></tr>'}).join("")+'</tbody></table>'}});
+  if(d.advice&&d.advice.length)tl.push({id:"adv",label:"Next",count:d.advice.length,html:function(){return '<table><tbody>'+d.advice.map(function(x,i){return '<tr><td class="num dim" style="width:22px">'+(i+1)+'</td><td>'+esc(x)+'</td></tr>'}).join("")+'</tbody></table>'}});
+  if(tl.length)h+=tabs(tl);
+  var ship=d.winner?d.winner.html+'\n<script type="application/ld+json">'+JSON.stringify(d.faq)+'<\/script>':'';
+  h+=footer(d,(d.winner?'<button class="btn p" data-copy="'+esc(ship)+'">'+I.copy+'Copy the HTML to ship</button>':'')+'<button class="btn" data-act="audit">Audit my page</button>');
+  return h;
+}
 function fixkit(d){
   var h=header(d,shortUrl(d.url));
   var todos=d.files.reduce(function(a,f){return a+f.todos},0);
@@ -266,7 +289,7 @@ function render(d){
   if(!d||typeof d!=="object")return;
   state.data=d;
   if(d.kind==="error"||d.error){root.innerHTML='<div class="app"><div class="bar"><span class="brand">'+LOGO+'<span>get<i>cited</i></span></span></div><div class="err">'+esc(d.error)+'</div></div>';size();return}
-  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="live"?liveView(d):d.kind==="site"?siteView(d):d.kind==="simulate"?simulate(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
+  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="live"?liveView(d):d.kind==="site"?siteView(d):d.kind==="simulate"?simulate(d):d.kind==="takeover"?takeoverView(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
   size();
 }
 document.addEventListener("click",function(e){

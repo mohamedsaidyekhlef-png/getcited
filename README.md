@@ -104,6 +104,24 @@ No API key. Same input, same result, every run, so you can put it in CI.
 
 To see what a real model does with those passages, add `--model`. It answers from the top passages and cites them. The passages are **shuffled on every sample to cancel the position bias** that skews single-shot tests.
 
+## 🏁 Takeover: win one question, end to end
+
+One command from "who gets cited for this?" to a pull request that takes the citation.
+
+```bash
+npx github:mohamedsaidyekhlef-png/getcited takeover "How much does a structured settlement buyout cost?" \
+  https://yoursite.com/pricing https://competitor.com/guide https://other.com/faq
+```
+
+1. **Who holds it now.** The Citation Arena ranks every passage on your page and the competing pages the way a retrieve-then-cite engine does.
+2. **The passage, from your own words.** getcited pulls the sentences already on your page that answer the question best and builds three shapes from them: a direct answer, the answer followed by your figures, and short sub-sections under your own headings. No model writes anything, so nothing can be invented.
+3. **Proof before you publish.** Each shape goes back into the arena on your page. The one that wins is returned with its rank and citation share before and after.
+4. **The answer after the change.** The answer an engine would assemble from the new top passages, each sentence attributed to its source.
+5. **The off-site route.** Open Authority for every domain in the fight, and for tracked domains the sites that link to the winner but not to you.
+6. **Ship it.** The HTML block plus FAQPage JSON-LD. `--apply page.html` writes it into a local file. [`integrations/github/takeover-pr.yml`](integrations/github/takeover-pr.yml) runs the whole thing from the Actions tab and opens a pull request with the proof as its description.
+
+When your page has nothing that answers the question, takeover says so. It shows the winning passage with every figure and name blanked out, so you know which real facts to add. The same tool is `getcited_takeover` in the connector (`https://getcited.scairos.com/mcp`) and the Takeover panel on [scairos.com/getcited](https://www.scairos.com/getcited).
+
 ## 🥊 Arena: who gets cited, and why
 
 ```bash

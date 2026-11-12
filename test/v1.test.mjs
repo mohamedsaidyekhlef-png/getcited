@@ -137,7 +137,7 @@ test("MCP server: initialize, list tools, call the X-ray", async () => {
     assert.equal((await next()).result.serverInfo.name, "getcited");
     send({ method: "notifications/initialized" });
     send({ id: 2, method: "tools/list" });
-    assert.deepEqual((await next()).result.tools.map((t) => t.name), ["getcited_audit", "getcited_xray", "getcited_arena", "getcited_site", "getcited_live", "getcited_simulate", "getcited_fixkit", "getcited_truth"]);
+    assert.deepEqual((await next()).result.tools.map((t) => t.name), ["getcited_audit", "getcited_xray", "getcited_arena", "getcited_site", "getcited_live", "getcited_takeover", "getcited_simulate", "getcited_fixkit", "getcited_truth"]);
     send({ id: 3, method: "tools/call", params: { name: "getcited_xray", arguments: { url: s.url } } });
     const out = await next();
     assert.equal(out.result.isError, false);
@@ -266,4 +266,32 @@ test("simulate: ### lines become sub-headings and are not scored as sentences", 
   const html = passageHtml("Q?", "Intro sentence here with facts.\n### Sub heading one\nBody of the first sub-section.");
   assert.match(html, /<h3>Sub heading one<\/h3>/);
   assert.ok(!html.includes("###"));
+});
+
+test("takeover: rebuilds the answer from the page's own sentences, proves it, and blanks figures when the page has none", async () => {
+  const { present } = await import("../src/mcp.mjs");
+  const { takeover, candidateSentences } = await import("../src/takeover.mjs");
+  const { readHtml } = await import("../src/html.mjs");
+  const { readFileSync } = await import("node:fs");
+  process.env.GETCITED_OA_BASE = "http://127.0.0.1:9/none";
+  const s = await serve("arena");
+  try {
+    const q = "How much does a structured settlement buyout cost?";
+    const page = readFileSync(new URL("./fixtures/arena/mine-fixed.html", import.meta.url), "utf8");
+    const text = readHtml(page).blocks.map((b) => b.text).join(" ");
+    const r = await takeover({ question: q, mine: s.url + "/mine-fixed.html", competitors: [s.url + "/settlewise.html", s.url + "/forum.html"] });
+    assert.ok(r.after.won && r.after.rank === 1);
+    assert.ok(r.tried.length >= 2);
+    for (const x of r.winner.sentences) assert.ok(text.replace(/\s+/g, " ").includes(x.text), `not on the page: ${x.text}`);
+    assert.ok(r.after.answer.sentences.length > 0);
+    assert.equal(r.faq["@type"], "FAQPage");
+    const thin = await takeover({ question: q, mine: s.url + "/mine.html", competitors: [s.url + "/settlewise.html"] });
+    assert.equal(thin.after, null);
+    assert.ok(thin.template.length > 0 && !thin.template.some((t) => /\d/.test(t)));
+    assert.equal(candidateSentences(q, readHtml(readFileSync(new URL("./fixtures/arena/mine.html", import.meta.url), "utf8")), "x").length, 0);
+    const p = await present("getcited_takeover", { question: q, mine: s.url + "/mine-fixed.html", competitors: [s.url + "/settlewise.html"] });
+    assert.equal(p.data.kind, "takeover");
+    assert.match(p.text, /getcited takeover/);
+    assert.match(p.text, /application\/ld\+json/);
+  } finally { s.close(); delete process.env.GETCITED_OA_BASE; }
 });

@@ -27,6 +27,10 @@ Commands
   getcited xray <url>                     sentence-by-sentence: what an AI would quote, what's dead weight
   getcited arena "<question>" <your-url> <competitor-url>...
                                           who gets cited for this question, and what your page is missing
+  getcited takeover "<question>" <your-url> <competitor-url>...
+                                          the passage from your own page that takes this answer, proven
+                                          before you publish, the projected answer and the off-site route.
+                                          --apply <page.html> writes the passage into a local page (for a PR)
   getcited test [getcited.yml]            run your citation tests; exits 1 on failure (for CI).
                                           Every run is saved and compared with the last: what regressed, and why
   getcited diff <old.json> <new.json>     compare two saved runs
@@ -66,7 +70,7 @@ function die(msg, code = 1) { console.error(`getcited: ${msg}`); process.exit(co
 function parse(argv) {
   const a = { pages: 1, probeBots: true, quiet: false, pos: [], vs: [], facts: [] };
   if (argv[0] === "index") return { cmd: "index", pos: argv.slice(1) };
-  const COMMANDS = ["audit", "xray", "arena", "test", "init", "truth", "mcp", "diff", "bench"];
+  const COMMANDS = ["audit", "xray", "arena", "takeover", "test", "init", "truth", "mcp", "diff", "bench"];
   if (COMMANDS.includes(argv[0])) a.cmd = argv.shift();
   else a.cmd = "audit";
   for (let i = 0; i < argv.length; i++) {
@@ -84,6 +88,7 @@ function parse(argv) {
       case "--badge": a.badge = val(); break;
       case "--json": a.json = argv[i + 1] === "-" || (argv[i + 1] && !argv[i + 1].startsWith("-")) ? argv[++i] : "-"; break;
       case "--fix": a.fix = val(); break;
+      case "--apply": a.apply = val(); break;
       case "--min": a.min = Number(val()); break;
       case "--no-bots": a.probeBots = false; break;
       case "--k": a.k = Math.max(1, Math.min(20, parseInt(val(), 10) || 5)); break;
@@ -171,6 +176,29 @@ switch (a.cmd) {
     if (a.md) write(a.md, arenaMarkdown(r) + "\n");
     if (a.summary) appendFileSync(a.summary, arenaMarkdown(r) + "\n");
     if (r.standings.every((s) => !s.ok)) process.exitCode = 1;
+    break;
+  }
+  case "takeover": {
+    const [question, mine, ...rest] = a.pos;
+    const competitors = [...rest, ...a.vs];
+    if (!question || !mine || !competitors.length) die('usage: getcited takeover "<question>" <your-url> <competitor-url>...');
+    const { takeover } = await import("../src/takeover.mjs");
+    const { takeoverCard, takeoverMarkdown } = await import("../src/present.mjs");
+    const r = await takeover({ question, mine, competitors, k: a.k || 5 });
+    if (r.error) die(r.error);
+    const md = takeoverMarkdown(takeoverCard(r));
+    json(r);
+    say(md + "\n");
+    if (a.md) write(a.md, md + "\n");
+    if (a.summary) appendFileSync(a.summary, md + "\n");
+    if (a.apply) {
+      if (!r.winner) die("no passage to apply: your page has nothing that answers this question yet", 2);
+      const { inject } = await import("../src/simulate.mjs");
+      const html = readFileSync(a.apply, "utf8");
+      const ld = `<script type="application/ld+json">${JSON.stringify(r.faq)}</script>`;
+      write(a.apply, inject(html, r.winner.html + ld));
+    }
+    if (!r.after?.won) process.exitCode = 2;
     break;
   }
   case "test": {

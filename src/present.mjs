@@ -194,3 +194,57 @@ export function fixkitMarkdown(c) {
   }
   return L.join("\n");
 }
+
+export function takeoverCard(r) {
+  const ctx = (c) => (c || []).slice(0, 3).map((p) => ({ rank: p.rank, source: p.source, url: p.url, mine: p.mine, heading: p.heading, text: one(p.text, 320) }));
+  return {
+    kind: "takeover", question: r.question, url: r.mine, measuredAt: r.measuredAt,
+    before: { share: r.before.share, rank: r.before.rank, leader: r.before.leader, leads: r.before.leads, answer: r.before.answer, context: ctx(r.before.context) },
+    after: r.after && { share: r.after.share, rank: r.after.rank, leader: r.after.leader, leads: r.after.leads, won: r.after.won, answer: r.after.answer, context: ctx(r.after.context) },
+    winner: r.winner, tried: r.tried, candidates: r.candidates, standings: r.standings,
+    advice: r.advice, template: r.template, offsite: r.offsite, faq: r.faq,
+  };
+}
+
+const rankTxt = (s) => (s.rank ? `#${s.rank}` : "not in the ranking");
+export function takeoverMarkdown(c) {
+  const L = [`**getcited takeover · “${c.question}”**`];
+  const b = c.before, a = c.after;
+  if (!a) L.push(`**Today ${b.leader || "a competitor"} holds the answer; your best passage is ${rankTxt(b)} (${pct(b.share)} of what an engine reads).** Nothing on your page answers this question yet, so there is nothing true to rearrange.`);
+  else if (b.leads && b.rank === 1) L.push(`**You already hold this answer (${pct(b.share)}).** The passage below makes it harder to take: ${pct(b.share)} → ${pct(a.share)}.`);
+  else L.push(a.won ? `**Takeover found: ${rankTxt(b)} → #1, citation share ${pct(b.share)} → ${pct(a.share)}.** Today ${b.leader} holds the top passage; with the passage below on your page, yours is the first one an engine reads.` : `**Closer, not in yet: ${rankTxt(b)} → ${rankTxt(a)}, share ${pct(b.share)} → ${pct(a.share)}.** ${a.leader} still holds the top passage.`);
+  L.push(`Tested ${utc(c.measuredAt)} against the live pages, ${c.tried.length} shapes tried. ${c.winner ? "Every sentence in the passage is already on your page; getcited chose and ordered them, so nothing is invented." : ""} Nothing was published.`);
+  if (c.winner) {
+    L.push("", `**The passage** (${c.winner.shape}: ${c.winner.note}) — heading: “${c.question}”`, "```markdown", c.winner.passage, "```");
+  }
+  if (a?.answer?.sentences.length) {
+    L.push("", "**The answer an engine would assemble after the change**");
+    for (const s of a.answer.sentences) L.push(`> ${s.text} [${s.cite}]`);
+    L.push("", a.answer.sources.map((s, i) => `[${i + 1}] ${s.mine ? `**${short(s.url)}** (you)` : short(s.url)}`).join(" · "));
+    L.push("Built from the top passages by getcited's open retriever; a real engine's wording will differ. Confirm with getcited_live.");
+  }
+  if (c.tried.length) {
+    L.push("", "| Shape tested | Your best passage | Your share | Top passage is yours |", "|---|---:|---:|---|");
+    for (const t of c.tried) L.push(`| ${t.shape}${c.winner?.shape === t.shape ? " ✓" : ""} | ${rankTxt(t)} | ${pct(t.share)} | ${t.won ? "yes" : "no"} |`);
+  }
+  if (c.template?.length) {
+    L.push("", `**What the winning passage says that your page doesn't** (figures and names blanked: supply your own real ones)`);
+    c.template.forEach((t) => L.push(`- ${t}`));
+  }
+  if (c.advice?.length) { L.push(""); c.advice.forEach((x, i) => L.push(`${i + 1}. ${x}`)); }
+  const o = c.offsite || {};
+  if (o.authority?.length) {
+    L.push("", "**Off-site: authority of everyone in this fight** (Open Authority 0–100, Common Crawl web graph)", "| Domain | OA | Referring domains |", "|---|---:|---:|");
+    o.authority.forEach((d, i) => L.push(`| ${i === 0 ? `**${d.domain}** (you)` : d.domain} | ${d.oa ?? "below ~25"} | ${d.referringDomains != null ? Number(d.referringDomains).toLocaleString("en-US") : "–"} |`));
+    const me = o.authority[0], top = o.authority.slice(1).filter((d) => d.oa != null).sort((x, y) => y.oa - x.oa)[0];
+    if (top && (me.oa ?? 0) + 15 <= top.oa) L.push(`Engines weigh authority too: ${top.domain} is ${top.oa} and you are ${me.oa ?? "below 25"}. Win the passage on-page, and close the gap with the placements below.`);
+  }
+  if (o.linkGap?.domains?.length) {
+    L.push("", `**Sites that link to ${o.linkGap.winner} but not to you** (${o.linkGap.domains.length} shown of ${o.linkGap.winnerTotal.toLocaleString("en-US")} referring domains${o.linkGap.complete ? "" : "; your list is partial, so check each"})`);
+    L.push(o.linkGap.domains.slice(0, 15).map((d) => `${d.domain} (${d.oa})`).join(", "));
+  } else if (o.authority?.length) L.push("", `Link gap: ${o.linkGap ? "none found" : "available for tracked domains"} (tracked: ${(o.tracked || []).join(", ") || "none"}).`);
+  if (c.winner) {
+    L.push("", "**Ship it** — paste at the top of the page's main content:", "```html", c.winner.html, `<script type="application/ld+json">${JSON.stringify(c.faq)}</script>`, "```");
+  }
+  return L.join("\n");
+}

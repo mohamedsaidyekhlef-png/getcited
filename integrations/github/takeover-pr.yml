@@ -1,0 +1,30 @@
+# Copy to .github/workflows/getcited-takeover.yml in your site's repo.
+# Run it from the Actions tab with a buyer question: getcited finds the passage on your
+# page that takes the answer, proves it against the live competing pages, writes it into
+# your page and opens a pull request whose description carries the proof.
+name: getcited takeover
+on:
+  workflow_dispatch:
+    inputs:
+      question: { description: "The buyer question to win", required: true }
+      page: { description: "Your live page URL", required: true }
+      file: { description: "The HTML file in this repo that renders that page", required: true }
+      competitors: { description: "Competing page URLs, space-separated", required: true }
+permissions: { contents: write, pull-requests: write }
+jobs:
+  takeover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Find and prove the passage
+        env: { Q: "${{ inputs.question }}", PAGE: "${{ inputs.page }}", FILE: "${{ inputs.file }}", VS: "${{ inputs.competitors }}" }
+        run: npx -y github:mohamedsaidyekhlef-png/getcited takeover "$Q" "$PAGE" $VS --apply "$FILE" --md takeover.md --summary "$GITHUB_STEP_SUMMARY"
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: getcited/takeover-${{ github.run_id }}
+          title: "Take the AI answer for: ${{ inputs.question }}"
+          body-path: takeover.md
+          add-paths: ${{ inputs.file }}
+          commit-message: "Add the passage that takes the AI answer for: ${{ inputs.question }}"

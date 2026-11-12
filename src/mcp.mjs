@@ -11,7 +11,8 @@ import { xray } from "./xray.mjs";
 import { truth } from "./truth.mjs";
 import { resolveModel } from "./llm.mjs";
 import { toJson } from "./report.mjs";
-import { auditCard, auditMarkdown, xrayCard, xrayMarkdown, arenaCard, arenaMarkdown, simulateCard, simulateMarkdown, fixkitCard, fixkitMarkdown } from "./present.mjs";
+import { auditCard, auditMarkdown, xrayCard, xrayMarkdown, arenaCard, arenaMarkdown, simulateCard, simulateMarkdown, fixkitCard, fixkitMarkdown, takeoverCard, takeoverMarkdown } from "./present.mjs";
+import { takeover } from "./takeover.mjs";
 import { simulate } from "./simulate.mjs";
 import { live, liveMarkdown, liveEngines } from "./live.mjs";
 import { siteExplorer, siteMarkdown } from "./authority.mjs";
@@ -69,6 +70,14 @@ export const TOOLS = [
     }, required: ["prompts", "brand"] },
   },
   {
+    name: "getcited_takeover",
+    title: "Take over an AI answer",
+    annotations: { title: "Takeover", ...READ },
+    _meta: { ...UI_META, "openai/toolInvocation/invoking": "Finding the passage that takes this answer…", "openai/toolInvocation/invoked": "Takeover plan ready" },
+    description: "The one-call way to win a buyer question in AI search. Runs the Citation Arena for the question, rebuilds the answer from sentences already on the user's page in three shapes (nothing is invented), tests each against the live competing pages, and returns the shape that wins with before/after rank and citation share, the answer an engine would assemble after the change with every sentence attributed, the Open Authority of every domain in the fight, the sites that link to the winner but not to the user (tracked domains), and the HTML plus FAQPage JSON-LD to ship. When the page has nothing that answers, it returns the winning passage with figures blanked out so the user can supply real ones.",
+    inputSchema: { type: "object", properties: { question: { type: "string", description: "The buyer question, in the buyer's words" }, mine: { type: "string", description: "URL of the user's page" }, competitors: { type: "array", items: { type: "string" }, description: "1 to 6 URLs of the pages that answer this question best today" } }, required: ["question", "mine", "competitors"] },
+  },
+  {
     name: "getcited_simulate",
     title: "Test a rewrite before you publish it",
     annotations: { title: "Rewrite simulator", ...READ },
@@ -103,11 +112,14 @@ export async function present(name, a, opts = {}) {
   if (name === "getcited_site") return { data: out, text: siteMarkdown(out) };
   if (name === "getcited_live") return { data: { kind: "live", ...out }, text: liveMarkdown(out) };
   if (name === "getcited_simulate") { const c = simulateCard(out); return { data: c, text: simulateMarkdown(c) }; }
+  if (name === "getcited_takeover") { const c = takeoverCard(out); return { data: c, text: takeoverMarkdown(c) }; }
   if (name === "getcited_fixkit") { const c = fixkitCard(out.url, out.files, out.at); return { data: c, text: fixkitMarkdown(c) }; }
   return { data: out, text: JSON.stringify(out, null, 2) };
 }
 
 export const PROMPTS = [
+  { name: "take-over-this-answer", title: "Take over an AI answer", description: "One call: who holds the answer, the passage from your own page that takes it, proof, and the off-site route.", arguments: [{ name: "question", description: "The question your buyers ask an AI", required: true }, { name: "url", description: "Your page", required: true }, { name: "competitors", description: "Competitor URLs, comma-separated (optional)" }],
+    text: (a) => `Run getcited_takeover for "${a.question}" with my page ${a.url}${a.competitors ? ` against ${a.competitors}` : " against the 3 to 5 pages that best answer this question today"}. Tell me in plain words who holds the answer now, whether the passage takes it, show the passage exactly as tested, and list the first three off-site placements to go after.` },
   { name: "win-this-question", title: "Win an AI answer", description: "Find who gets cited for your buyers' question, write the passage that beats them, and prove it wins before you publish.", arguments: [{ name: "question", description: "The question your buyers ask an AI", required: true }, { name: "url", description: "Your page", required: true }, { name: "competitors", description: "Competitor URLs, comma-separated (optional)" }],
     text: (a) => `Win the AI answer for "${a.question}" with my page ${a.url}. 1) Run getcited_arena${a.competitors ? ` against ${a.competitors}` : " against the 3 to 5 pages that best answer this question today"}. 2) Draft a passage for my page using only facts already on my page: open with a direct answer in the question's words, then specific figures. 3) Test it with getcited_simulate. 4) Revise and simulate again until my page holds the top passage (stop after 3 rounds). 5) Show me the winning passage exactly as tested and the before/after citation share.` },
   { name: "audit-my-site", title: "Audit my site for AI search", description: "Can ChatGPT, Perplexity, Claude and Google AI reach, read and quote your page?", arguments: [{ name: "url", description: "Your page or domain", required: true }],
@@ -135,6 +147,7 @@ export async function call(name, a, { hosted = false } = {}) {
   if (name === "getcited_site") return siteExplorer(a.domain, a.competitors || []);
   if (name === "getcited_live") return live({ prompts: a.prompts || [], brand: a.brand, competitors: (a.competitors || []).slice(0, 10), engines: a.engines });
   if (name === "getcited_simulate") return simulate({ question: a.question, mine: a.mine, competitors: (a.competitors || []).slice(0, 6), passage: String(a.passage || "").slice(0, 6000), heading: a.heading, k: 5 });
+  if (name === "getcited_takeover") return takeover({ question: a.question, mine: a.mine, competitors: (a.competitors || []).slice(0, 6), k: 5 });
   if (name === "getcited_fixkit") { const r = await audit(a.url, { pages: 1, probeBots: false }); if (r.error) return { error: r.error }; return { url: r.url, at: r.auditedAt, files: buildFixes(r) }; }
   if (name === "getcited_truth") return truth({ brand: a.brand, facts: a.facts, site: a.site, llm: resolveModel(a.model) });
   throw new Error(`unknown tool ${name}`);
@@ -147,7 +160,7 @@ export async function handleRpc(msg, { version = "1.2.0", hosted = false } = {})
   if (id === undefined || id === null) return null; // notifications (initialized, cancelled…)
   const ok = (result) => ({ jsonrpc: "2.0", id, result });
   try {
-    if (method === "initialize") return ok({ protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: {}, resources: {}, prompts: {} }, serverInfo: { name: "getcited", title: "getcited", version, description: "Unit tests for AI search: see whether ChatGPT, Perplexity, Claude and Google AI can reach, read and cite a page.", icons: ICONS, websiteUrl: "https://www.scairos.com/getcited" }, instructions: "getcited measures pages live, at call time. Use getcited_audit to check whether AI engines can reach and quote a page, getcited_xray to see which sentences an AI would quote, and getcited_arena to see who an AI answer engine would cite for a question and why. Each result already includes a readable report and an interactive card; summarize the verdict and the top fixes in your own words rather than repeating every number, and quote the evidence when the user asks if a result is real. Work like an expert: when a page loses a question, draft a passage from facts already on the user's page and prove it with getcited_simulate before recommending it (revise until it wins, at most 3 rounds); when the user wants to implement fixes, use getcited_fixkit for the code. Never invent figures, quotes, authors or dates for the user's page." });
+    if (method === "initialize") return ok({ protocolVersion: params?.protocolVersion || "2025-06-18", capabilities: { tools: {}, resources: {}, prompts: {} }, serverInfo: { name: "getcited", title: "getcited", version, description: "Unit tests for AI search: see whether ChatGPT, Perplexity, Claude and Google AI can reach, read and cite a page.", icons: ICONS, websiteUrl: "https://www.scairos.com/getcited" }, instructions: "getcited measures pages live, at call time. Use getcited_audit to check whether AI engines can reach and quote a page, getcited_xray to see which sentences an AI would quote, and getcited_arena to see who an AI answer engine would cite for a question and why. Each result already includes a readable report and an interactive card; summarize the verdict and the top fixes in your own words rather than repeating every number, and quote the evidence when the user asks if a result is real. Work like an expert: for any \"how do I win this question\" request, start with getcited_takeover. When a page loses a question, draft a passage from facts already on the user's page and prove it with getcited_simulate before recommending it (revise until it wins, at most 3 rounds); when the user wants to implement fixes, use getcited_fixkit for the code. Never invent figures, quotes, authors or dates for the user's page." });
     if (method === "ping") return ok({});
     if (method === "tools/list") return ok({ tools: hosted ? TOOLS.filter((t) => t.name !== "getcited_truth" && (t.name !== "getcited_live" || liveEngines().length)).map((t) => ({ ...t, inputSchema: { ...t.inputSchema, properties: Object.fromEntries(Object.entries(t.inputSchema.properties).filter(([k]) => k !== "model")) } })) : TOOLS });
     if (method === "tools/call") {
