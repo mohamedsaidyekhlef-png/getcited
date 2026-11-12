@@ -166,3 +166,46 @@ if (cmd === "shards") {
   }
   log(`shards: ${byName.size.toLocaleString()} domains in 256 shards`);
 }
+
+// ---- Long tail: every domain in the graph, not just the top N ------------------------
+//   node scripts/open-authority.mjs indeg-all                 < domain-edges.txt  → work/indeg-all.bin
+//   node scripts/open-authority.mjs tail <out dir> <skip top>  < joined.tsv
+//     joined.tsv: rev_domain \t id \t harmonic_pos \t pagerank_pos \t n_hosts (sorted join of
+//     vertices and ranks, made with `sort` and `join` on disk). Writes out/t000..t999.tsv,
+//     bucket = uint32(sha1(domain)[0:8]) % 1000, for every domain ranked below <skip top>.
+
+export const TAIL_BUCKETS = 1000;
+if (cmd === "indeg-all") {
+  const MAXID = 140_000_000;
+  const indeg = new Uint32Array(MAXID);
+  const n = await edgePairs((from, to) => { if (to < MAXID) indeg[to]++; });
+  writeFileSync(`${WORK}/indeg-all.bin`, Buffer.from(indeg.buffer));
+  log(`indeg-all: ${n.toLocaleString()} links`);
+}
+
+if (cmd === "tail") {
+  const OUT = process.argv[3] || "out";
+  const SKIP = Number(process.argv[4] || 10_000_000);
+  mkdirSync(OUT, { recursive: true });
+  const { total } = JSON.parse(readFileSync(`${WORK}/ranks.json`, "utf8"));
+  const indeg = readTyped(`${WORK}/indeg-all.bin`, Uint32Array);
+  const lnN = Math.log(total);
+  const oa = (pos) => Math.max(0, Math.round(100 * (1 - (Math.log(pos) / lnN) ** 2)));
+  const fds = Array.from({ length: TAIL_BUCKETS }, (_, i) => openSync(`${OUT}/t${String(i).padStart(3, "0")}.tsv`, "w"));
+  const bufs = Array.from({ length: TAIL_BUCKETS }, () => []);
+  const flush = (i) => { if (bufs[i].length) { writeSync(fds[i], bufs[i].join("")); bufs[i] = []; } };
+  let kept = 0;
+  await lines((l) => {
+    const [r, id, hc, pr, hosts] = l.split("\t");
+    const pos = +hc;
+    if (!(pos > SKIP)) return;
+    const d = unrev(r);
+    const b = createHash("sha1").update(d).digest().readUInt32BE(0) % TAIL_BUCKETS;
+    bufs[b].push(`${d}\t${oa(pos)}\t${pos}\t${+pr}\t${indeg[+id] || 0}\t${+hosts || 0}\n`);
+    if (bufs[b].length >= 2000) flush(b);
+    kept++;
+  });
+  for (let i = 0; i < TAIL_BUCKETS; i++) { flush(i); closeSync(fds[i]); }
+  writeFileSync(`${OUT}/tail-meta.json`, JSON.stringify({ domainsInGraph: total, skipTop: SKIP, domainsPublished: kept, buckets: TAIL_BUCKETS, bucket: "uint32be(sha1(domain)[0:4]) % 1000", columns: ["domain", "oa", "harmonic_rank", "pagerank_rank", "referring_domains", "hosts"] }, null, 2));
+  log(`tail: ${kept.toLocaleString()} domains in ${TAIL_BUCKETS} buckets`);
+}

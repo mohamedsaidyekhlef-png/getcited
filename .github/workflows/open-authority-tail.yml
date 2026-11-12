@@ -1,0 +1,45 @@
+name: Open Authority long tail (every domain in the graph)
+# Publishes authority, ranks and referring domains for every domain in the Common Crawl
+# domain graph below the top N already in the main release, as release oa-tail-<release>.
+on:
+  workflow_dispatch:
+    inputs:
+      release: { description: "Common Crawl web graph release id", default: "cc-main-2026-may-jun-jul", required: true }
+      skip: { description: "Domains already in the main release (top N)", default: "10000000", required: true }
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      REL: ${{ github.event.inputs.release }}
+      OA_WORK: /mnt/oa-work
+      CC: https://data.commoncrawl.org/projects/hyperlinkgraph/${{ github.event.inputs.release }}/domain/${{ github.event.inputs.release }}
+      LC_ALL: C
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: sudo apt-get install -y pigz >/dev/null && sudo mkdir -p /mnt/oa-work/out && sudo chown -R $USER /mnt/oa-work && df -h /mnt && free -g
+      - name: Ranks sorted by domain
+        run: |
+          curl -sf "$CC-domain-ranks.txt.gz" | pigz -dc | grep -v '^#' | awk -F'\t' -v OFS='\t' '{print $5,$1,$3,$6}' | sort -t$'\t' -k1,1 -S 5G --parallel=4 -T /mnt/oa-work > /mnt/oa-work/ranks.sorted
+          echo "{\"total\": $(wc -l < /mnt/oa-work/ranks.sorted)}" > /mnt/oa-work/ranks.json; cat /mnt/oa-work/ranks.json
+      - name: Vertices sorted by domain
+        run: curl -sf "$CC-domain-vertices.txt.gz" | pigz -dc | awk -F'\t' -v OFS='\t' '{print $2,$1}' | sort -t$'\t' -k1,1 -S 5G --parallel=4 -T /mnt/oa-work > /mnt/oa-work/vertices.sorted
+      - name: Referring domains for every domain
+        run: curl -sf "$CC-domain-edges.txt.gz" | pigz -dc | node scripts/open-authority.mjs indeg-all
+      - name: Join and shard
+        run: |
+          join -t$'\t' -j1 /mnt/oa-work/vertices.sorted /mnt/oa-work/ranks.sorted | node scripts/open-authority.mjs tail /mnt/oa-work/out ${{ github.event.inputs.skip }}
+          rm -f /mnt/oa-work/*.sorted
+          cd /mnt/oa-work/out && ls t*.tsv | xargs -P 4 -n 50 gzip -9 && du -sh . && ls | wc -l && cat tail-meta.json
+          for d in cbcsettlementfunding.com settlementdecisions.com scairos.com; do b=$(node -e "console.log(String(require('crypto').createHash('sha1').update('$d').digest().readUInt32BE(0)%1000).padStart(3,'0'))"); echo "$d: $(zcat t$b.tsv.gz | grep -P "^$d\t" || echo 'not in tail')"; done | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Publish release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          TAG="oa-tail-$REL"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" --title "Open Authority long tail · $REL" --notes "Every domain in the Common Crawl $REL domain graph below the top ${{ github.event.inputs.skip }}: OA, harmonic and PageRank ranks, referring domains, hosts. Bucket = uint32be(sha1(domain)[0:4]) % 1000." /mnt/oa-work/out/tail-meta.json
+          cd /mnt/oa-work/out && ls t*.tsv.gz | xargs -n 100 gh release upload "$TAG" --clobber
