@@ -6,7 +6,5 @@ jobs:
     steps:
       - shell: bash {0}
         run: |
-          echo "R vitals $(curl -s -m 90 -X POST -H 'content-type: application/json' -d '{"url":"https://cbcsettlementfunding.com"}' 'https://www.scairos.com/api/getcited/v1/vitals?view=card' | head -c 900)"
-          echo "R vitals2 $(curl -s -m 90 -X POST -H 'content-type: application/json' -d '{"url":"https://www.nerdwallet.com"}' 'https://www.scairos.com/api/getcited/v1/vitals?view=card' | head -c 700)"
-          echo "R site $(curl -s -m 60 -X POST -H 'content-type: application/json' -d '{"domain":"cbcsettlementfunding.com"}' 'https://www.scairos.com/api/getcited/v1/site?view=card' | head -c 500)"
-          echo "R audit $(curl -s -m 60 -X POST -H 'content-type: application/json' -d '{"url":"https://cbcsettlementfunding.com"}' 'https://www.scairos.com/api/getcited/v1/audit?view=card' | head -c 300)"
+          for d in cbcsettlementfunding.com settlementdecisions.com nerdwallet.com; do echo "R site $(curl -s -m 60 -X POST -H 'content-type: application/json' -d "{\"domain\":\"$d\"}" 'https://www.scairos.com/api/getcited/v1/site?view=card' | grep -o '"you":{[^}]*}')"; done
+          echo "R mcp $(curl -s -m 60 -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getcited_site","arguments":{"domain":"cbcsettlementfunding.com"}}}' https://getcited.scairos.com/mcp | grep -o 'Open Authority[^|]*' | head -1)"
