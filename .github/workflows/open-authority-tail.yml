@@ -41,5 +41,6 @@ jobs:
         run: |
           TAG="oa-tail-$REL"
           gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Open Authority long tail · $REL" --notes "Every domain in the Common Crawl $REL domain graph below the top ${{ github.event.inputs.skip }}: OA, harmonic and PageRank ranks, referring domains, hosts. Bucket = uint32be(sha1(domain)[0:4]) % 1000." /mnt/oa-work/out/tail-meta.json
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Open Authority long tail · $REL" --notes "Every domain in the Common Crawl $REL domain graph below the top ${{ github.event.inputs.skip }}: OA, harmonic and PageRank ranks, referring domains, hosts. Bucket = uint32be(sha1(domain)[0:4]) % 1000. Metadata: tail-meta.json in release oa-$REL (a release holds at most 1000 files)."
+          gh release upload "oa-$REL" /mnt/oa-work/out/tail-meta.json --clobber --repo "$GITHUB_REPOSITORY"
           cd /mnt/oa-work/out && ls t*.tsv.gz | xargs -n 100 gh release upload "$TAG" --clobber --repo "$GITHUB_REPOSITORY"
