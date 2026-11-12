@@ -40,6 +40,6 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           TAG="oa-tail-$REL"
-          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "$TAG" --title "Open Authority long tail · $REL" --notes "Every domain in the Common Crawl $REL domain graph below the top ${{ github.event.inputs.skip }}: OA, harmonic and PageRank ranks, referring domains, hosts. Bucket = uint32be(sha1(domain)[0:4]) % 1000." /mnt/oa-work/out/tail-meta.json
-          cd /mnt/oa-work/out && ls t*.tsv.gz | xargs -n 100 gh release upload "$TAG" --clobber
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Open Authority long tail · $REL" --notes "Every domain in the Common Crawl $REL domain graph below the top ${{ github.event.inputs.skip }}: OA, harmonic and PageRank ranks, referring domains, hosts. Bucket = uint32be(sha1(domain)[0:4]) % 1000." /mnt/oa-work/out/tail-meta.json
+          cd /mnt/oa-work/out && ls t*.tsv.gz | xargs -n 100 gh release upload "$TAG" --clobber --repo "$GITHUB_REPOSITORY"
