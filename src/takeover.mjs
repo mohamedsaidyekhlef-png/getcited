@@ -35,6 +35,13 @@ export function standalone(s) {
   if (ws.length >= 6 && caps / ws.length > 0.6) return false;
   return true;
 }
+/** Drop a run of navigation labels glued to the front of a real sentence; the rest stays verbatim. */
+export function unmenu(s) {
+  const w = s.trim().split(/\s+/);
+  let i = 0;
+  while (i < w.length && (/^[\p{Lu}\d]/u.test(w[i]) || /^(a|an|and|of|the|vs\.?|to|for|&)$/i.test(w[i]))) i++;
+  return i >= 7 && i < w.length ? w.slice(i - 1).join(" ") : s.trim();
+}
 const DEFINE = /^(what|what's|whats|define|definition)\b/i;
 const definitional = (q, s) => DEFINE.test(q) && /\b(is|are|refers to|means)\b/i.test(s);
 
@@ -43,7 +50,8 @@ export function candidateSentences(question, page, url) {
   const seen = new Set();
   const list = [];
   for (const p of passages(page, url)) {
-    for (const s of sentences(p.text)) {
+    for (const raw of sentences(p.text)) {
+      const s = unmenu(raw);
       const n = words(s);
       if (n < 6 || n > 45 || !standalone(s)) continue;
       const key = norm(s);
@@ -97,7 +105,7 @@ export function projectAnswer(question, context, limit = 4) {
   const picks = [];
   for (const p of context) {
     if (picks.length >= limit) break;
-    const best = sentences(p.text)
+    const best = sentences(p.text).map(unmenu)
       .filter((s) => words(s) >= 6 && words(s) <= 50 && standalone(s))
       .map((s) => ({ s, k: terms(s).filter((t) => qt.has(t)).length + scoreSentence(s).score / 100 + (definitional(question, s) ? 1 : 0) }))
       .sort((a, b) => b.k - a.k)[0];
