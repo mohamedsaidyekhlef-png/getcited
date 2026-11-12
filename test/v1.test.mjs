@@ -288,6 +288,12 @@ test("takeover: rebuilds the answer from the page's own sentences, proves it, an
     const thin = await takeover({ question: q, mine: s.url + "/mine.html", competitors: [s.url + "/settlewise.html"] });
     assert.equal(thin.after, null);
     assert.ok(thin.template.length > 0 && !thin.template.some((t) => /\d/.test(t)));
+    const { standalone } = await import("../src/takeover.mjs");
+    assert.equal(standalone("Structured Settlement Basics How Structured Settlements Work Advantages Disadvantages Payouts."), false);
+    assert.equal(standalone("This means the cash you receive is less than the payments."), false);
+    assert.equal(standalone("“Also, the rate is fixed.” There are reasons."), false);
+    assert.equal(standalone("Access Your Settlement Money When You Need It"), false);
+    assert.equal(standalone("A structured settlement is a series of payments from a lawsuit."), true);
     assert.equal(candidateSentences(q, readHtml(readFileSync(new URL("./fixtures/arena/mine.html", import.meta.url), "utf8")), "x").length, 0);
     const p = await present("getcited_takeover", { question: q, mine: s.url + "/mine-fixed.html", competitors: [s.url + "/settlewise.html"] });
     assert.equal(p.data.kind, "takeover");

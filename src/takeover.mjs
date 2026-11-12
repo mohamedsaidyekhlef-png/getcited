@@ -23,6 +23,21 @@ import { cleanDomain, lookup, targets } from "./authority.mjs";
 const host = (u) => { try { return new URL(u).host.replace(/^www\./, ""); } catch { return String(u); } };
 const norm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 
+// A sentence an engine could lift on its own: ends like a sentence, isn't a menu run,
+// doesn't open by pointing back at something it doesn't carry, isn't a quote fragment.
+const DANGLE = /^(this|that|these|those|it|they|also|however|but|and|so|then|such|here|there|which|as a result|in addition|for example)\b/i;
+export function standalone(s) {
+  const t = s.trim();
+  if (!/[.!?)”"]$/.test(t)) return false;
+  if (/^["“'‘(]/.test(t) || DANGLE.test(t)) return false;
+  const ws = t.split(/\s+/).filter((w) => /^\p{L}/u.test(w));
+  const caps = ws.filter((w) => /^\p{Lu}/u.test(w)).length;
+  if (ws.length >= 6 && caps / ws.length > 0.6) return false;
+  return true;
+}
+const DEFINE = /^(what|what's|whats|define|definition)\b/i;
+const definitional = (q, s) => DEFINE.test(q) && /\b(is|are|refers to|means)\b/i.test(s);
+
 /** Every usable sentence on the page, scored for this question and for quotability. */
 export function candidateSentences(question, page, url) {
   const seen = new Set();
@@ -30,7 +45,7 @@ export function candidateSentences(question, page, url) {
   for (const p of passages(page, url)) {
     for (const s of sentences(p.text)) {
       const n = words(s);
-      if (n < 6 || n > 45) continue;
+      if (n < 6 || n > 45 || !standalone(s)) continue;
       const key = norm(s);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -45,7 +60,7 @@ export function candidateSentences(question, page, url) {
   const rel = list.map((_, i) => queries.reduce((a, q) => a + index.score(q, i), 0));
   const max = Math.max(...rel) || 1;
   return list
-    .map((c, i) => ({ ...c, relevance: +(rel[i] / max).toFixed(3), score: +((rel[i] / max) * 0.65 + (c.quality / 100) * 0.35).toFixed(3) }))
+    .map((c, i) => ({ ...c, relevance: +(rel[i] / max).toFixed(3), score: +((rel[i] / max) * 0.65 + (c.quality / 100) * 0.35 + (definitional(question, c.text) ? 0.25 : 0)).toFixed(3) }))
     .filter((c) => c.relevance > 0)
     .sort((a, b) => b.score - a.score);
 }
@@ -83,8 +98,8 @@ export function projectAnswer(question, context, limit = 4) {
   for (const p of context) {
     if (picks.length >= limit) break;
     const best = sentences(p.text)
-      .filter((s) => words(s) >= 6 && words(s) <= 50)
-      .map((s) => ({ s, k: terms(s).filter((t) => qt.has(t)).length + scoreSentence(s).score / 100 }))
+      .filter((s) => words(s) >= 6 && words(s) <= 50 && standalone(s))
+      .map((s) => ({ s, k: terms(s).filter((t) => qt.has(t)).length + scoreSentence(s).score / 100 + (definitional(question, s) ? 1 : 0) }))
       .sort((a, b) => b.k - a.k)[0];
     if (!best || picks.some((u) => norm(u.s) === norm(best.s))) continue;
     picks.push({ ...best, p });
@@ -129,7 +144,7 @@ export function blankTemplate(context, names = []) {
   const top = context.filter((p) => !p.mine).slice(0, 2);
   const out = [];
   for (const p of top) for (const s of sentences(p.text)) {
-    if (out.length >= 4 || words(s) < 6 || words(s) > 45 || scoreSentence(s).verdict === "dead") continue;
+    if (out.length >= 4 || words(s) < 6 || words(s) > 45 || !standalone(s) || scoreSentence(s).verdict === "dead") continue;
     let t = s.replace(/[$€£]?\d[\d,.]*\d?(?:\s*(?:%|percent\b|days?\b|weeks?\b|months?\b|years?\b))?/gi, "[your figure]").replace(/(\[your figure\][\s,–-]*){2,}/g, "[your figure] ");
     if ((t.match(/\[your figure\]/g) || []).length > 4) continue;
     for (const n of names) if (n) t = t.replace(new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), "[your brand]");
