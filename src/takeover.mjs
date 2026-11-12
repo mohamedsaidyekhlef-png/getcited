@@ -107,7 +107,7 @@ export function projectAnswer(question, context, limit = 4) {
     if (picks.length >= limit) break;
     const best = sentences(p.text).map(unmenu)
       .filter((s) => words(s) >= 6 && words(s) <= 50 && standalone(s))
-      .map((s) => ({ s, k: terms(s).filter((t) => qt.has(t)).length + scoreSentence(s).score / 100 + (definitional(question, s) ? 1 : 0) }))
+      .map((s) => ({ s, k: terms(s).filter((t) => qt.has(t)).length + scoreSentence(s).score / 100 + (definitional(question, s) ? 3 : 0) }))
       .sort((a, b) => b.k - a.k)[0];
     if (!best || picks.some((u) => norm(u.s) === norm(best.s))) continue;
     picks.push({ ...best, p });
