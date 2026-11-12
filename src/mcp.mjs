@@ -13,6 +13,7 @@ import { resolveModel } from "./llm.mjs";
 import { toJson } from "./report.mjs";
 import { auditCard, auditMarkdown, xrayCard, xrayMarkdown, arenaCard, arenaMarkdown, simulateCard, simulateMarkdown, fixkitCard, fixkitMarkdown, takeoverCard, takeoverMarkdown } from "./present.mjs";
 import { takeover } from "./takeover.mjs";
+import { vitals, vitalsMarkdown } from "./vitals.mjs";
 import { simulate } from "./simulate.mjs";
 import { live, liveMarkdown, liveEngines } from "./live.mjs";
 import { siteExplorer, siteMarkdown } from "./authority.mjs";
@@ -70,6 +71,14 @@ export const TOOLS = [
     }, required: ["prompts", "brand"] },
   },
   {
+    name: "getcited_vitals",
+    title: "Core Web Vitals from Google's field data",
+    annotations: { title: "Core Web Vitals", ...READ },
+    _meta: { ...UI_META, "openai/toolInvocation/invoking": "Reading Google's field data for the page…", "openai/toolInvocation/invoked": "Core Web Vitals ready" },
+    description: "Core Web Vitals for a URL from Google's official PageSpeed Insights API: real-user field data from the Chrome UX Report (LCP, INP, CLS, FCP, TTFB at p75 over 28 days) for the page and its origin, whether it passes, and a Lighthouse lab score. Official data, not scraped.",
+    inputSchema: { type: "object", properties: { url: { type: "string", description: "Page or domain" }, strategy: { type: "string", enum: ["mobile", "desktop"], description: "Defaults to mobile, which Google uses for ranking" } }, required: ["url"] },
+  },
+  {
     name: "getcited_takeover",
     title: "Take over an AI answer",
     annotations: { title: "Takeover", ...READ },
@@ -112,6 +121,7 @@ export async function present(name, a, opts = {}) {
   if (name === "getcited_site") return { data: out, text: siteMarkdown(out) };
   if (name === "getcited_live") return { data: { kind: "live", ...out }, text: liveMarkdown(out) };
   if (name === "getcited_simulate") { const c = simulateCard(out); return { data: c, text: simulateMarkdown(c) }; }
+  if (name === "getcited_vitals") return { data: out, text: vitalsMarkdown(out) };
   if (name === "getcited_takeover") { const c = takeoverCard(out); return { data: c, text: takeoverMarkdown(c) }; }
   if (name === "getcited_fixkit") { const c = fixkitCard(out.url, out.files, out.at); return { data: c, text: fixkitMarkdown(c) }; }
   return { data: out, text: JSON.stringify(out, null, 2) };
@@ -147,6 +157,7 @@ export async function call(name, a, { hosted = false } = {}) {
   if (name === "getcited_site") return siteExplorer(a.domain, a.competitors || []);
   if (name === "getcited_live") return live({ prompts: a.prompts || [], brand: a.brand, competitors: (a.competitors || []).slice(0, 10), engines: a.engines });
   if (name === "getcited_simulate") return simulate({ question: a.question, mine: a.mine, competitors: (a.competitors || []).slice(0, 6), passage: String(a.passage || "").slice(0, 6000), heading: a.heading, k: 5 });
+  if (name === "getcited_vitals") return vitals(a.url, { strategy: a.strategy === "desktop" ? "desktop" : "mobile" });
   if (name === "getcited_takeover") return takeover({ question: a.question, mine: a.mine, competitors: (a.competitors || []).slice(0, 6), k: 5 });
   if (name === "getcited_fixkit") { const r = await audit(a.url, { pages: 1, probeBots: false }); if (r.error) return { error: r.error }; return { url: r.url, at: r.auditedAt, files: buildFixes(r) }; }
   if (name === "getcited_truth") return truth({ brand: a.brand, facts: a.facts, site: a.site, llm: resolveModel(a.model) });

@@ -73,8 +73,8 @@ function when(iso){try{return new Date(iso).toLocaleTimeString([],{hour:"2-digit
 function host(u){try{return new URL(u).host.replace(/^www\./,"")}catch(e){return u}}
 function shortUrl(u){try{var x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname).replace(/\/+$/,"")}catch(e){return u}}
 var WORD={pass:"Pass",warn:"Warning",fail:"Fail",info:"Note"};
-var TOOL={site:"getcited_site",live:"getcited_live",audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",takeover:"getcited_takeover",fixkit:"getcited_fixkit"};
-var LABEL={site:"Site Explorer",live:"Live AI answers",audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",takeover:"Takeover",fixkit:"Fix kit"};
+var TOOL={site:"getcited_site",live:"getcited_live",audit:"getcited_audit",xray:"getcited_xray",arena:"getcited_arena",simulate:"getcited_simulate",takeover:"getcited_takeover",vitals:"getcited_vitals",fixkit:"getcited_fixkit"};
+var LABEL={site:"Site Explorer",live:"Live AI answers",audit:"Audit",xray:"X-ray",arena:"Citation Arena",simulate:"Rewrite simulator",takeover:"Takeover",vitals:"Core Web Vitals",fixkit:"Fix kit"};
 
 // Host bridge: MCP Apps (Claude, VS Code…) and the ChatGPT Apps SDK.
 var nextId=1,pending={};
@@ -248,6 +248,15 @@ function takeoverView(d){
   h+=footer(d,(d.winner?'<button class="btn p" data-copy="'+esc(ship)+'">'+I.copy+'Copy the HTML to ship</button>':'')+'<button class="btn" data-act="audit">Audit my page</button>');
   return h;
 }
+function vitalsView(d){
+  var f=d.page||d.origin,h=header(d,shortUrl(d.url));
+  var fm=function(m){return m.unit==="ms"?(m.p75>=1000?(m.p75/1000).toFixed(1)+" s":Math.round(m.p75)+" ms"):m.p75.toFixed(2)};
+  var tn=function(r){return r==="good"?"pass":r==="poor"?"fail":"warn"};
+  h+='<div class="kpis">'+gauge(d.lab.performance||0,d.lab.performance==null?"–":d.lab.performance,"lab")+'<div style="min-width:0"><div class="verdict">'+(!f?"No field data from real Chrome users":f.passes?"Passes Core Web Vitals":f.passes===false?"Fails Core Web Vitals":"Partial field data")+'</div><div class="meta">'+(f?(d.page?"This page":"Whole origin")+" · real Chrome users, p75, last 28 days · "+esc(d.strategy):"Lab run only")+'</div></div></div>';
+  if(f)h+='<div class="pane"><table><thead><tr><th>Metric</th><th class="r">p75</th><th>Rating</th><th class="hide-sm">Good · needs work · poor</th></tr></thead><tbody>'+f.metrics.map(function(m){var ds=m.distribution;return '<tr><td>'+esc(m.label)+'</td><td class="r num"><b>'+fm(m)+'</b></td><td><span class="pill '+tn(m.rating)+'">'+esc(m.rating)+'</span></td><td class="hide-sm"><span class="track" style="display:flex;height:8px">'+(ds.length===3?'<i style="width:'+ds[0]*100+'%;background:var(--pass);border-radius:0"></i><i style="width:'+ds[1]*100+'%;background:var(--warn);border-radius:0"></i><i style="width:'+ds[2]*100+'%;background:var(--fail);border-radius:0"></i>':'')+'</span></td></tr>'}).join("")+'</tbody></table></div>';
+  h+=footer(d,'<button class="btn" data-act="audit">Audit the page</button>');
+  return h;
+}
 function fixkit(d){
   var h=header(d,shortUrl(d.url));
   var todos=d.files.reduce(function(a,f){return a+f.todos},0);
@@ -289,7 +298,7 @@ function render(d){
   if(!d||typeof d!=="object")return;
   state.data=d;
   if(d.kind==="error"||d.error){root.innerHTML='<div class="app"><div class="bar"><span class="brand">'+LOGO+'<span>get<i>cited</i></span></span></div><div class="err">'+esc(d.error)+'</div></div>';size();return}
-  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="live"?liveView(d):d.kind==="site"?siteView(d):d.kind==="simulate"?simulate(d):d.kind==="takeover"?takeoverView(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
+  try{root.innerHTML='<div class="app">'+(d.kind==="audit"?audit(d):d.kind==="xray"?xray(d):d.kind==="arena"?arena(d):d.kind==="live"?liveView(d):d.kind==="site"?siteView(d):d.kind==="simulate"?simulate(d):d.kind==="takeover"?takeoverView(d):d.kind==="vitals"?vitalsView(d):d.kind==="fixkit"?fixkit(d):"")+'</div>'}catch(e){root.innerHTML='<div class="err">Could not draw this result.</div>'}
   size();
 }
 document.addEventListener("click",function(e){
