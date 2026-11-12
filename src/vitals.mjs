@@ -32,7 +32,7 @@ export async function vitals(url, { strategy = "mobile", key = process.env.PAGES
   if (key) q.set("key", key);
   const res = await fetch(`${API}?${q}`, { headers: { "user-agent": "getcited" } });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: res.status === 429 ? "Google's PageSpeed API is rate-limiting shared requests right now. Try again in a minute." : j?.error?.message || `PageSpeed API returned HTTP ${res.status}` };
+  if (!res.ok) return { error: res.status === 429 ? (key ? "Google's PageSpeed API quota for this key is used up for now." : "Google's PageSpeed API needs a key here: set PAGESPEED_API_KEY (free, from Google Cloud).") : j?.error?.message || `PageSpeed API returned HTTP ${res.status}`, needsKey: res.status === 429 && !key };
   const lh = j.lighthouseResult || {};
   const audit = (id) => lh.audits?.[id]?.numericValue;
   return {
